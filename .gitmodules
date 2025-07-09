@@ -1,0 +1,3 @@
+[submodule "wiki"]
+	path = wiki
+	url = https://github.com/kkm-horikawa/programing-skill-scouter.wiki.git
