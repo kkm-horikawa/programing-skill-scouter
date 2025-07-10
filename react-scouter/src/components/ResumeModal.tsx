@@ -70,7 +70,7 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
         const currentDate = new Date();
         
         // GitHubデータからスキルのデフォルト値を作成
-        const defaultSkills = [];
+        const defaultSkills: Array<{category: string; content: string}> = [];
         
         // 主要プログラミング言語
         if (techData.languages.length > 0) {
@@ -80,20 +80,53 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
           });
         }
         
-        // フレームワーク・ライブラリ
-        if (Array.from(techData.techStack.frameworks).length > 0) {
-          defaultSkills.push({
-            category: 'フレームワーク・ライブラリ',
-            content: Array.from(techData.techStack.frameworks).join(', ')
+        // ライブラリ分析が利用可能な場合の詳細情報
+        if (techData.libraryAnalysis) {
+          // 言語別の主要ライブラリ
+          techData.libraryAnalysis.languages.forEach(langLib => {
+            if (langLib.libraries.length > 0) {
+              const topLibs = langLib.libraries.slice(0, 5);
+              defaultSkills.push({
+                category: `${langLib.language}主要ライブラリ`,
+                content: topLibs.map(lib => `${lib.name} (${lib.usage}プロジェクトで使用)`).join(', ')
+              });
+            }
           });
-        }
-        
-        // 開発・運用ツール
-        if (Array.from(techData.techStack.devops).length > 0) {
-          defaultSkills.push({
-            category: '開発・運用ツール',
-            content: Array.from(techData.techStack.devops).join(', ')
+          
+          // 技術カテゴリ別のスキル
+          const categoryMap: Record<string, string[]> = {};
+          techData.libraryAnalysis.topLibraries.forEach(lib => {
+            if (!categoryMap[lib.category]) {
+              categoryMap[lib.category] = [];
+            }
+            categoryMap[lib.category].push(lib.name);
           });
+          
+          // カテゴリ別に追加
+          Object.entries(categoryMap).forEach(([category, libs]) => {
+            if (libs.length > 0 && !defaultSkills.some(skill => skill.category === category)) {
+              defaultSkills.push({
+                category,
+                content: libs.slice(0, 10).join(', ')
+              });
+            }
+          });
+        } else {
+          // 従来のフレームワーク・ライブラリ情報
+          if (Array.from(techData.techStack.frameworks).length > 0) {
+            defaultSkills.push({
+              category: 'フレームワーク・ライブラリ',
+              content: Array.from(techData.techStack.frameworks).join(', ')
+            });
+          }
+          
+          // 開発・運用ツール
+          if (Array.from(techData.techStack.devops).length > 0) {
+            defaultSkills.push({
+              category: '開発・運用ツール',
+              content: Array.from(techData.techStack.devops).join(', ')
+            });
+          }
         }
 
         // GitHubデータから技術経歴の豊富なデフォルト値を作成
@@ -138,8 +171,16 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
           
           { content: `【技術スタック詳細】\nフレームワーク・ライブラリ: ${Array.from(techData.techStack.frameworks).length > 0 ? Array.from(techData.techStack.frameworks).join(', ') : 'なし'}\n開発・運用ツール: ${Array.from(techData.techStack.devops).length > 0 ? Array.from(techData.techStack.devops).join(', ') : 'なし'}\nテスト関連: ${Array.from(techData.techStack.testing).length > 0 ? Array.from(techData.techStack.testing).join(', ') : 'なし'}\nデータベース: ${Array.from(techData.techStack.databases || []).length > 0 ? Array.from(techData.techStack.databases || []).join(', ') : 'なし'}` },
           
+          // ライブラリ分析結果（GitHubトークンがある場合のみ）
+          techData.libraryAnalysis && { content: `【ライブラリ使用分析】\n総ライブラリ数: ${techData.libraryAnalysis.totalUniqueLibraries}個\n${techData.libraryAnalysis.languages.slice(0, 3).map(langLib => 
+            `${langLib.language}: ${langLib.totalLibraries}個のライブラリ\n  主要: ${langLib.libraries.slice(0, 3).map(lib => lib.name).join(', ')}`
+          ).join('\n')}` },
+          
           { content: `【外部連携・プロフィール拡張情報】\n所在地: ${techData.profile?.location || '未設定'}\n会社・組織: ${techData.profile?.company || '未設定'}\nブログ・Website: ${techData.profile?.blog || '未設定'}\nTwitter: ${techData.profile?.twitter_username ? '@' + techData.profile.twitter_username : '未設定'}\nメール公開: ${techData.profile?.email ? '設定済み' : '非公開'}` }
-        ].filter(item => item.content && !item.content.includes('データなし') && !item.content.includes('未取得'));
+        ].filter((item): item is { content: string } => 
+          item !== undefined && item !== null && item.content !== undefined && 
+          !item.content.includes('データなし') && !item.content.includes('未取得')
+        );
         
         setEditableData({
           furigana: techData.username.toLowerCase(),
