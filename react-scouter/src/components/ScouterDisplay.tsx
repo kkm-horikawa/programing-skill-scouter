@@ -1596,6 +1596,67 @@ const analyzeLibraries = async (repos: GitHubRepo[]): Promise<import('../types/g
               }
             }
           });
+          
+          // pyproject.tomlのサポート
+          filesToCheck.push({
+            path: 'pyproject.toml',
+            parser: (content: string) => {
+              try {
+                const deps: Record<string, string> = {};
+                const lines = content.split('\n');
+                let inDependencies = false;
+                let inOptionalDependencies = false;
+                
+                for (const line of lines) {
+                  // Poetry形式
+                  if (line.trim() === '[tool.poetry.dependencies]' || line.trim() === '[tool.poetry.dev-dependencies]') {
+                    inDependencies = true;
+                    inOptionalDependencies = false;
+                    continue;
+                  }
+                  // PEP 621形式
+                  if (line.trim() === '[project]') {
+                    inDependencies = false;
+                    inOptionalDependencies = false;
+                    continue;
+                  }
+                  if (line.trim().startsWith('dependencies = [')) {
+                    inDependencies = true;
+                    inOptionalDependencies = false;
+                    continue;
+                  }
+                  if (line.trim() === '[project.optional-dependencies]') {
+                    inOptionalDependencies = true;
+                    inDependencies = false;
+                    continue;
+                  }
+                  
+                  if (line.startsWith('[') && (inDependencies || inOptionalDependencies)) {
+                    break;
+                  }
+                  
+                  // Poetry形式の依存関係
+                  if (inDependencies && !line.includes('python =')) {
+                    const match = line.match(/^([a-zA-Z0-9-_]+)\s*=\s*["{]?\s*(?:(?:version\s*=\s*)?["']?([^"'}\s]+)|(\^|~)?([0-9.]+))/);
+                    if (match) {
+                      deps[match[1].toLowerCase()] = match[2] || match[4] || 'latest';
+                    }
+                  }
+                  
+                  // PEP 621形式の依存関係（配列形式）
+                  if (inDependencies && line.includes('"')) {
+                    const match = line.match(/["']([a-zA-Z0-9-_]+)(?:\[.*?\])?(?:==|>=|<=|~=|>|<)?([^"']*)?["']/);
+                    if (match) {
+                      deps[match[1].toLowerCase()] = match[2] || 'latest';
+                    }
+                  }
+                }
+                return Object.keys(deps).length > 0 ? deps : null;
+              } catch {
+                return null;
+              }
+            }
+          });
         }
         
         // Ruby
