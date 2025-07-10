@@ -230,7 +230,8 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
           customQualifications: [], // 初期は空
           customGithubExperiences: defaultGithubExperiences, // GitHubデータからのデフォルト値
           resumeDate: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日現在`,
-          customSkills: defaultSkills // GitHubデータからのデフォルト値
+          customSkills: defaultSkills, // GitHubデータからのデフォルト値
+          photoData: null // 初期は写真なし
         });
       }
     }
