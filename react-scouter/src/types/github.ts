@@ -141,6 +141,100 @@ export interface PowerLevelResult {
   };
 }
 
+// プロフィールREADME情報
+export interface ProfileReadme {
+  content: string | null;
+  hasReadme: boolean;
+  sections: {
+    introduction?: string;
+    skills?: string;
+    projects?: string;
+    contact?: string;
+    other?: string[];
+  };
+}
+
+// アチーブメント情報
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'SECRET';
+  category: string;
+  unlockedAt: string;
+  badgeUrl?: string;
+}
+
+// リポジトリの詳細情報
+export interface DetailedRepo extends GitHubRepo {
+  topics: string[];
+  license: {
+    key: string;
+    name: string;
+  } | null;
+  default_branch: string;
+  has_issues: boolean;
+  has_projects: boolean;
+  has_wiki: boolean;
+  has_pages: boolean;
+  archived: boolean;
+  disabled: boolean;
+  readme?: {
+    content: string;
+    hasDemo: boolean;
+    hasDocumentation: boolean;
+    technologies: string[];
+  };
+}
+
+// 拡張されたユーザー情報
+export interface ExtendedGitHubUser extends GitHubUser {
+  twitter_username: string | null;
+  gravatar_id: string | null;
+  organizations_url: string;
+  repos_url: string;
+  events_url: string;
+  received_events_url: string;
+  type: string;
+  site_admin: boolean;
+  // プロフィール追加情報
+  profile: {
+    pronouns?: string;
+    work?: string;
+    education?: string;
+    interests?: string[];
+    achievements?: Achievement[];
+    sponsors?: {
+      isSponsoring: boolean;
+      sponsorsCount: number;
+      sponsoringCount: number;
+    };
+  };
+}
+
+// 組織情報
+export interface Organization {
+  login: string;
+  id: number;
+  url: string;
+  avatar_url: string;
+  description: string | null;
+}
+
+// コントリビューション詳細
+export interface ContributionDetails {
+  totalContributions: number;
+  weeks: Array<{
+    contributionDays: Array<{
+      contributionCount: number;
+      date: string;
+    }>;
+  }>;
+  mostActiveDay: string;
+  longestStreak: number;
+  currentStreak: number;
+}
+
 export interface DetailedTechData {
   username: string;
   powerLevel: number;
@@ -150,5 +244,23 @@ export interface DetailedTechData {
     repos: number;
     stars: number;
     contributions: number;
+    followers: number;
+    following: number;
+    gists: number;
+  };
+  // 拡張情報
+  profile: ExtendedGitHubUser;
+  profileReadme: ProfileReadme;
+  achievements: Achievement[];
+  topRepositories: DetailedRepo[];
+  organizations: Organization[];
+  contributionDetails: ContributionDetails;
+  accountMetrics: {
+    accountAge: number; // 日数
+    firstCommitDate: string | null;
+    lastActiveDate: string;
+    totalCommits: number;
+    totalPullRequests: number;
+    totalIssues: number;
   };
 }

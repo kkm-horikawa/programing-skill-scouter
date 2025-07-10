@@ -1095,6 +1095,7 @@ body {
   font-size: 12px;
   line-height: 1.3;
   position: relative;
+  color: #000;
 }
 
 /* 見開きレイアウト - A4サイズ想定 */
@@ -1115,6 +1116,7 @@ body {
   box-sizing: border-box;
   page-break-inside: avoid;
   overflow: hidden;
+  color: #000;
 }
 
 .resume-left {
@@ -1137,6 +1139,7 @@ body {
   font-weight: bold;
   margin: 0;
   padding: 0;
+  color: #000;
 }
 
 .date-section {
@@ -1457,6 +1460,282 @@ body {
 .close-button:hover {
   color: #333;
   background: #f0f0f0;
+}
+
+/* 編集ボタンと保存ボタンのスタイル */
+.edit-button, .save-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s ease;
+  margin-right: 10px;
+}
+
+.edit-button {
+  background: #28a745;
+  color: white;
+}
+
+.edit-button:hover {
+  background: #218838;
+}
+
+.save-button {
+  background: #ffc107;
+  color: #212529;
+}
+
+.save-button:hover {
+  background: #e0a800;
+}
+
+/* 編集可能な入力フィールドのスタイル */
+.editable-input {
+  border: 1px solid #ddd;
+  padding: 2px 4px;
+  font-size: inherit;
+  font-family: inherit;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.editable-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.furigana-input {
+  font-size: 9px;
+  color: #666;
+}
+
+.name-input {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.year-input.editable-input {
+  width: 50px;
+}
+
+.month-input.editable-input, .day-input.editable-input, .age-input.editable-input {
+  width: 30px;
+}
+
+.address-input {
+  font-size: 10px;
+  width: 100%;
+}
+
+.phone-input, .email-input {
+  font-size: 10px;
+  width: 100%;
+}
+
+.editable-select {
+  border: 1px solid #ddd;
+  padding: 2px 4px;
+  font-size: 8px;
+  font-family: inherit;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.editable-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.editable-textarea {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 9px;
+  font-family: inherit;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.editable-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.personal-note-textarea {
+  min-height: 80px;
+}
+
+.date-input {
+  font-size: 12px;
+  width: 200px;
+}
+
+/* テーブル編集関連のスタイル */
+.table-year-input {
+  width: 35px;
+  font-size: 9px;
+  text-align: center;
+}
+
+.table-month-input {
+  width: 30px;
+  font-size: 9px;
+  text-align: center;
+}
+
+.table-content-input {
+  width: calc(100% - 25px);
+  font-size: 9px;
+  margin-right: 5px;
+}
+
+.table-content-edit {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.remove-row-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.remove-row-btn:hover {
+  background: #c82333;
+}
+
+.table-controls {
+  margin-top: 5px;
+  text-align: center;
+}
+
+.add-row-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+}
+
+.add-row-btn:hover {
+  background: #218838;
+}
+
+.skills-textarea {
+  min-height: 40px;
+  font-size: 9px;
+}
+
+/* 住所欄関連のスタイル */
+.address-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.postal-code-field {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+}
+
+.postal-code-input {
+  width: 80px;
+  font-size: 10px;
+  text-align: center;
+}
+
+.address-field {
+  width: 100%;
+}
+
+.address-textarea {
+  width: 100%;
+  min-height: 35px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* テーブル内容のテキストエリア */
+.table-content-textarea {
+  width: calc(100% - 25px);
+  min-height: 30px;
+  font-size: 9px;
+  line-height: 1.3;
+  margin-right: 5px;
+}
+
+/* スキルセクション関連のスタイル */
+.skill-item {
+  position: relative;
+}
+
+.skill-category-input {
+  font-size: 9px;
+  font-weight: bold;
+  width: 200px;
+  margin-right: 5px;
+}
+
+.skill-content-edit {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.skill-remove-btn {
+  margin-top: 5px;
+}
+
+/* 無効化されたボタンのスタイル */
+.add-row-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.add-row-btn:disabled:hover {
+  background: #ccc;
+}
+
+/* GitHub情報テーブル専用のスタイル */
+.github-section {
+  margin-bottom: 12px;
+}
+
+.github-info-col {
+  width: 100%;
+  background: #f0f8ff;
+  font-weight: bold;
+  text-align: center;
+  font-size: 10px;
 }
 
 /* レスポンシブ対応 */
