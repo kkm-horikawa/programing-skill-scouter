@@ -29,6 +29,7 @@ interface EditableData {
   customGithubExperiences: Array<{content: string}>;
   resumeDate: string;
   customSkills: Array<{category: string; content: string}>;
+  photoData: string | null; // Base64 encoded image data
 }
 
 const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) => {
@@ -53,10 +54,36 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
     customQualifications: [],
     customGithubExperiences: [],
     resumeDate: '',
-    customSkills: []
+    customSkills: [],
+    photoData: null
   });
 
   const [isEditing, setIsEditing] = useState(false);
+
+  // ビューポートの調整とスクロール制御（モバイルデバイス対応）
+  useEffect(() => {
+    if (isOpen) {
+      // bodyにクラスを追加してスクロールを制御
+      document.body.style.overflow = 'hidden';
+      
+      // 現在のビューポート設定を保存
+      const currentViewport = document.querySelector('meta[name="viewport"]');
+      const originalContent = currentViewport?.getAttribute('content') || '';
+      
+      // モバイルデバイスの場合、ビューポートを調整
+      if (window.innerWidth < 768) {
+        currentViewport?.setAttribute('content', 'width=device-width, initial-scale=0.5, maximum-scale=2, user-scalable=yes');
+      }
+      
+      // クリーンアップ関数でビューポートを元に戻す
+      return () => {
+        document.body.style.overflow = '';
+        if (currentViewport && originalContent) {
+          currentViewport.setAttribute('content', originalContent);
+        }
+      };
+    }
+  }, [isOpen]);
 
   // ローカルストレージから保存されたデータを読み込む
   useEffect(() => {
@@ -217,6 +244,35 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
     }
   };
 
+  // 写真アップロード機能
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // ファイルサイズチェック (5MB以下)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('画像サイズは5MB以下にしてください');
+        return;
+      }
+
+      // 画像形式チェック
+      if (!file.type.startsWith('image/')) {
+        alert('画像ファイルを選択してください');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setEditableData(prev => ({ ...prev, photoData: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoRemove = () => {
+    setEditableData(prev => ({ ...prev, photoData: null }));
+  };
+
   // 編集データの更新
   const updateEditableData = (field: keyof EditableData, value: string | string[] | Array<{year: string; month: string; content: string}> | Array<{category: string; content: string}> | Array<{content: string}>) => {
     setEditableData(prev => ({ ...prev, [field]: value }));
@@ -298,7 +354,38 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
   const handleDownload = () => {
     // PDFダウンロード機能を実装
     if (typeof window !== 'undefined' && window.print) {
+      // 印刷前の準備
+      const beforePrint = () => {
+        // すべてのtransformを一時的に無効化
+        const resumePages = document.querySelector('.resume-pages') as HTMLElement;
+        if (resumePages) {
+          resumePages.style.transform = 'none';
+          resumePages.style.marginBottom = '0';
+        }
+      };
+
+      // 印刷後の復元
+      const afterPrint = () => {
+        // transformを復元
+        const resumePages = document.querySelector('.resume-pages') as HTMLElement;
+        if (resumePages) {
+          resumePages.style.transform = '';
+          resumePages.style.marginBottom = '';
+        }
+      };
+
+      // イベントリスナーを追加
+      window.addEventListener('beforeprint', beforePrint);
+      window.addEventListener('afterprint', afterPrint);
+      
+      // 印刷ダイアログを開く
       window.print();
+      
+      // 印刷ダイアログが閉じられた後にリスナーを削除
+      setTimeout(() => {
+        window.removeEventListener('beforeprint', beforePrint);
+        window.removeEventListener('afterprint', afterPrint);
+      }, 1000);
     }
   };
 
@@ -342,15 +429,86 @@ const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, techData }) 
                 </span>
                 <div className="photo-placeholder">
                   <div className="photo-frame">
-                    <div className="photo-text">写真を貼る位置</div>
-                    <div className="photo-note">
-                      写真を貼る必要が<br/>
-                      ある場合に<br/>
-                      <small>1. 縦 36～40mm</small><br/>
-                      <small>横 24～30mm</small><br/>
-                      <small>2. 本人単身胸から上</small><br/>
-                      <small>3. 脱帽のうえ正面</small>
-                    </div>
+                    {editableData.photoData ? (
+                      <>
+                        <img 
+                          src={editableData.photoData} 
+                          alt="証明写真" 
+                          style={{
+                            position: 'absolute',
+                            top: '0',
+                            left: '0',
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center center'
+                          }}
+                        />
+                        {isEditing && (
+                          <button 
+                            onClick={handlePhotoRemove}
+                            className="photo-remove-btn"
+                            style={{
+                              position: 'absolute',
+                              top: '2px',
+                              right: '2px',
+                              background: 'rgba(255, 0, 0, 0.8)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '20px',
+                              height: '20px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {isEditing ? (
+                          <label 
+                            htmlFor="photo-upload" 
+                            style={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              height: '100%',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div className="photo-text">写真を選択</div>
+                            <div style={{ fontSize: '20px', marginTop: '5px' }}>📷</div>
+                            <input
+                              id="photo-upload"
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePhotoUpload}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
+                        ) : (
+                          <>
+                            <div className="photo-text">写真を貼る位置</div>
+                            <div className="photo-note">
+                              写真を貼る必要が<br/>
+                              ある場合に<br/>
+                              <small>1. 縦 36～40mm</small><br/>
+                              <small>横 24～30mm</small><br/>
+                              <small>2. 本人単身胸から上</small><br/>
+                              <small>3. 脱帽のうえ正面</small>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

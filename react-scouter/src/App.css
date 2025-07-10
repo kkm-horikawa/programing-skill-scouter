@@ -1096,6 +1096,7 @@ body {
   line-height: 1.3;
   position: relative;
   color: #000;
+  overflow-x: auto;
 }
 
 /* 見開きレイアウト - A4サイズ想定 */
@@ -1104,6 +1105,8 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   min-height: 100%;
+  width: 100%;
+  min-width: 420mm; /* A4 2ページ分の最小幅 */
 }
 
 .resume-page {
@@ -1117,6 +1120,7 @@ body {
   page-break-inside: avoid;
   overflow: hidden;
   color: #000;
+  transform-origin: top left;
 }
 
 .resume-left {
@@ -1173,8 +1177,20 @@ body {
   text-align: center;
   font-size: 10px;
   position: relative;
-  padding: 8px;
+  padding: 3px;
   box-sizing: border-box;
+  overflow: hidden;
+  background: white;
+}
+
+.photo-frame img {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  padding: 0;
+  margin: 0;
 }
 
 .photo-text {
@@ -1777,26 +1793,187 @@ body {
   border-left: none;
 }
 
-/* レスポンシブ対応 */
-@media (max-width: 1400px) {
-  .resume-pages {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-  
-  .resume-page {
-    width: 100%;
-    height: auto;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
+/* レスポンシブ対応 - 完全にスケーラブルな設計 */
+
+/* デスクトップ表示のビューポート制御 */
+@media screen and (min-width: 1681px) {
   .resume-content {
-    max-width: 850px;
+    transform: scale(1);
+    transform-origin: top center;
   }
 }
 
-@media (max-width: 768px) {
+/* 中型デスクトップ (1400px - 1680px) */
+@media screen and (max-width: 1680px) and (min-width: 1401px) {
+  .resume-content {
+    width: 95vw;
+    padding: 5px;
+    overflow-x: auto;
+  }
+  
+  .resume-pages {
+    transform: scale(0.85);
+    transform-origin: top left;
+    margin-bottom: -15%;
+  }
+}
+
+/* 小型デスクトップ / タブレット横向き (1024px - 1400px) */
+@media screen and (max-width: 1400px) and (min-width: 1024px) {
+  .resume-content {
+    width: 98vw;
+    padding: 5px;
+    overflow-x: auto;
+  }
+  
+  .resume-pages {
+    transform: scale(0.7);
+    transform-origin: top left;
+    margin-bottom: -30%;
+  }
+}
+
+/* タブレット (768px - 1023px) */
+@media screen and (max-width: 1023px) and (min-width: 768px) {
+  .resume-content {
+    width: 98vw;
+    padding: 5px;
+    overflow-x: auto;
+  }
+  
+  .resume-pages {
+    transform: scale(0.55);
+    transform-origin: top left;
+    margin-bottom: -45%;
+  }
+  
+  /* コントロールボタンの調整 */
+  .resume-controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1002;
+  }
+}
+
+/* モバイル / タブレット縦向き (481px - 767px) */
+@media screen and (max-width: 767px) and (min-width: 481px) {
+  .resume-modal {
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  
+  .resume-content {
+    width: 100vw;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    overflow-x: auto;
+  }
+  
+  .resume-pages {
+    transform: scale(0.4);
+    transform-origin: top left;
+    margin-bottom: -60%;
+    margin-left: -30%;
+  }
+  
+  /* コントロールボタンをより小さく */
+  .resume-controls {
+    position: fixed;
+    top: 5px;
+    right: 5px;
+    transform: scale(0.85);
+    transform-origin: top right;
+  }
+  
+  .download-button, .edit-button, .save-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .close-button {
+    width: 30px;
+    height: 30px;
+    font-size: 24px;
+  }
+}
+
+/* スマートフォン (320px - 480px) */
+@media screen and (max-width: 480px) {
+  .resume-modal {
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  
+  .resume-content {
+    width: 100vw;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    overflow-x: auto;
+  }
+  
+  .resume-pages {
+    transform: scale(0.3);
+    transform-origin: top left;
+    margin-bottom: -70%;
+    margin-left: -35%;
+  }
+  
+  /* コントロールボタンをさらに小さく */
+  .resume-controls {
+    position: fixed;
+    top: 5px;
+    right: 5px;
+    transform: scale(0.75);
+    transform-origin: top right;
+    gap: 5px;
+  }
+  
+  .download-button, .edit-button, .save-button {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  
+  .close-button {
+    width: 25px;
+    height: 25px;
+    font-size: 20px;
+  }
+}
+
+/* 超小型デバイス (320px未満) */
+@media screen and (max-width: 319px) {
+  .resume-pages {
+    transform: scale(0.25);
+    transform-origin: top left;
+    margin-bottom: -75%;
+    margin-left: -37.5%;
+  }
+}
+
+/* 共通のモバイル調整 */
+@media screen and (max-width: 768px) {
+  /* スクロールバーのスタイリング */
+  .resume-content::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .resume-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  .resume-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .resume-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  
+  /* その他のUI要素の調整 */
   .input-container {
     min-width: auto;
     width: 90%;
@@ -1811,101 +1988,45 @@ body {
     width: 100%;
   }
   
-  
-  .resume-content {
-    width: 95%;
-  }
-  
-  .tech-grid {
+  /* GitHub情報セクションのレスポンシブ対応 */
+  .github-section tbody {
     grid-template-columns: 1fr;
   }
   
-  .resume-stats {
-    grid-template-columns: 1fr;
+  .github-section tbody td:nth-child(odd) {
+    border-right: 1px solid #000;
   }
   
-  .resume-content {
-    width: 98%;
-    padding: 5px;
-    margin: 10px auto;
-  }
-  
-  .resume-page {
-    padding: 15px;
-    border: 1px solid #000;
-    width: 100%;
-    height: auto;
-  }
-  
-  .resume-title {
-    font-size: 20px;
-  }
-  
-  .info-row {
-    grid-template-columns: 60px 1fr;
-    min-height: 30px;
-  }
-  
-  .info-row.birth-gender-row {
-    grid-template-columns: 60px 2fr 50px 1fr;
-  }
-  
-  .info-row.contact-row {
-    grid-template-columns: 50px 1fr 50px 1fr;
-  }
-  
-  .gender-options {
-    font-size: 8px;
-    gap: 1px;
-  }
-  
-  .year-input {
-    width: 30px;
-  }
-  
-  .month-input, .day-input, .age-input {
-    width: 18px;
-  }
-  
-  .photo-placeholder {
-    width: 100px;
-    height: 125px;
-  }
-  
-  .photo-frame {
-    width: 100px;
-    height: 125px;
-  }
-  
-  .photo-note {
-    width: 120px;
-    font-size: 6px;
-  }
-  
-  .experience-table th, .qualifications-table th,
-  .experience-table td, .qualifications-table td {
-    font-size: 9px;
-    padding: 3px;
-    min-height: 25px;
-    height: auto;
-  }
-  
-  .year-col {
-    width: 30px;
-  }
-  
-  .month-col {
-    width: 25px;
+  .github-section tbody td:nth-child(even) {
+    border-left: 1px solid #000;
   }
 }
 
-/* 印刷時のスタイル */
+/* 印刷時のスタイル - A4サイズに正確に合わせる */
 @media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  /* 印刷時は全ての要素をリセット */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  
   .resume-modal {
     background: none !important;
     position: static !important;
     width: 100% !important;
     height: 100% !important;
+    overflow: visible !important;
   }
   
   .resume-content {
@@ -1915,27 +2036,155 @@ body {
     padding: 0 !important;
     max-width: none !important;
     width: 100% !important;
+    transform: none !important;
+    overflow: visible !important;
   }
   
   .resume-controls {
     display: none !important;
   }
   
+  /* 編集用のボタンとコントロールを非表示 */
+  .add-row-btn,
+  .remove-row-btn,
+  .table-controls,
+  .skill-remove-btn,
+  .edit-button,
+  .save-button,
+  .download-button,
+  .close-button,
+  .table-content-edit button,
+  .skill-content-edit button,
+  .photo-remove-btn {
+    display: none !important;
+  }
+  
+  /* 編集モードの入力フィールドを通常のテキストとして表示 */
+  .editable-input,
+  .editable-textarea,
+  .editable-select {
+    border: none !important;
+    background: transparent !important;
+    resize: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+  }
+  
   .resume-pages {
+    display: block !important;
     gap: 0 !important;
+    transform: none !important;
+    min-width: auto !important;
+    margin: 0 !important;
   }
   
   .resume-page {
-    page-break-after: always;
+    /* A4サイズに正確に設定 */
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 15mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    transform: none !important;
+    border: 2px solid #000 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    height: 100vh !important;
+    overflow: hidden !important;
+    display: block !important;
+    position: relative !important;
   }
   
   .resume-page:last-child {
-    page-break-after: avoid;
+    page-break-after: auto !important;
+  }
+  
+  /* 各要素のサイズを印刷用に調整 */
+  .resume-header {
+    margin-bottom: 15px !important;
+  }
+  
+  .resume-title {
+    font-size: 24px !important;
+  }
+  
+  .date-label {
+    font-size: 10px !important;
+  }
+  
+  .photo-frame {
+    width: 30mm !important;
+    height: 40mm !important;
+  }
+  
+  .info-row label {
+    font-size: 9px !important;
+    padding: 3px !important;
+  }
+  
+  .info-content {
+    font-size: 10px !important;
+    padding: 3px !important;
+  }
+  
+  .experience-table, .qualifications-table {
+    font-size: 9px !important;
+  }
+  
+  .experience-table th, .qualifications-table th,
+  .experience-table td, .qualifications-table td {
+    padding: 2px 3px !important;
+    font-size: 8px !important;
+    height: auto !important;
+    min-height: 15px !important;
+  }
+  
+  .section-header {
+    font-size: 10px !important;
+    padding: 4px !important;
+  }
+  
+  .skills-content, .personal-note-content {
+    font-size: 8px !important;
+    padding: 8px !important;
+    min-height: 60px !important;
+  }
+  
+  /* GitHub情報の2カラムレイアウトを維持 */
+  .github-section tbody {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+  
+  .github-section tbody td {
+    font-size: 7px !important;
+    padding: 3px !important;
+  }
+  
+  /* 改ページの制御 */
+  .experience-section, .qualifications-section, .github-section, .skills-section {
+    page-break-inside: avoid !important;
+  }
+  
+  /* 注釈や説明文を非表示 */
+  .note {
+    display: none !important;
+  }
+  
+  /* 左右のページの区切り */
+  .resume-left {
+    border-right: none !important;
+  }
+  
+  /* レスポンシブ用のtransformをすべて無効化 */
+  .resume-modal,
+  .resume-content,
+  .resume-pages,
+  .resume-page {
+    transform: none !important;
+    margin: 0 !important;
   }
 }
 
