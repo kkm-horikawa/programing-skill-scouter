@@ -256,7 +256,12 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, transparent, rgba(0, 255, 0, 0.1), transparent);
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(0, 255, 0, 0.1),
+    transparent
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -428,7 +433,9 @@ body {
     text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
   }
   to {
-    text-shadow: 0 0 30px rgba(0, 255, 0, 0.8), 0 0 40px rgba(0, 255, 255, 0.5);
+    text-shadow:
+      0 0 30px rgba(0, 255, 0, 0.8),
+      0 0 40px rgba(0, 255, 255, 0.5);
   }
 }
 
@@ -470,7 +477,8 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -484,7 +492,7 @@ body {
     max-width: 1200px;
     padding: 0 1.5rem;
   }
-  
+
   .features-container,
   .how-to-use-container,
   .scanner-container {
@@ -501,38 +509,38 @@ body {
     margin: 0 auto 20px;
     padding: 15px;
   }
-  
+
   .username-input {
     width: 140px;
     font-size: 14px;
   }
-  
+
   .scan-button {
     width: 100%;
     margin-top: 0.5rem;
   }
-  
+
   .token-input {
     width: 100%;
     max-width: 100%;
   }
-  
+
   .hero-content {
     padding: 0 0.5rem;
   }
-  
+
   .features-container,
   .how-to-use-container,
   .scanner-container {
     padding: 0 0.5rem;
   }
-  
+
   .scouter-container {
     padding: 5px;
     width: 100%;
     max-width: 100%;
   }
-  
+
   .scouter-container svg {
     width: 100%;
     height: auto;
@@ -545,43 +553,43 @@ body {
   .hero-title {
     font-size: 1.5rem;
   }
-  
+
   .hero-title-main {
     font-size: 1.5rem;
   }
-  
+
   .hero-description {
     font-size: 0.9rem;
   }
-  
+
   .scouter-preview {
     width: 100%;
     max-width: 280px;
     height: 180px;
     margin: 0 auto;
   }
-  
+
   .section-title {
     font-size: 1.5rem;
   }
-  
+
   .feature-card,
   .step-card {
     margin: 0 0.5rem;
     padding: 1rem;
   }
-  
+
   .features-container,
   .how-to-use-container,
   .scanner-container {
     padding: 0 0.5rem;
   }
-  
+
   .scouter-container {
     padding: 5px;
     overflow: hidden;
   }
-  
+
   .scouter-container svg {
     width: 100%;
     height: auto;
@@ -589,7 +597,7 @@ body {
     max-height: 300px;
     display: block;
   }
-  
+
   .input-container {
     min-width: auto;
     width: 95%;
@@ -597,7 +605,7 @@ body {
     margin: 0 auto;
     padding: 8px;
   }
-  
+
   .download-svg-button {
     font-size: 12px;
     padding: 8px 16px;
@@ -608,24 +616,24 @@ body {
   body {
     overflow-x: hidden;
   }
-  
+
   .landing-page {
     overflow-x: hidden;
     width: 100%;
   }
-  
+
   .hero-section {
     padding: 4rem 0 2rem;
     width: 100%;
     overflow: hidden;
   }
-  
+
   .features-section,
   .how-to-use-section,
   .scanner-section {
     width: 100%;
   }
-  
+
   .hero-content {
     grid-template-columns: 1fr;
     gap: 2rem;
@@ -635,61 +643,61 @@ body {
     width: 100%;
     overflow: hidden;
   }
-  
+
   .hero-title {
     font-size: 2rem;
     line-height: 1.3;
   }
-  
+
   .hero-title-main {
     font-size: 2rem;
   }
-  
+
   .hero-title-sub {
     font-size: 1rem;
   }
-  
+
   .hero-description {
     font-size: 1rem;
     line-height: 1.5;
     margin-bottom: 1.5rem;
   }
-  
+
   .hero-features {
     flex-direction: column;
     gap: 1rem;
     justify-content: center;
     align-items: center;
   }
-  
+
   .hero-feature {
     font-size: 0.9rem;
   }
-  
+
   .cta-button {
     padding: 1rem 2rem;
     font-size: 1rem;
   }
-  
+
   .scouter-preview {
     width: 100%;
     max-width: 320px;
     height: 200px;
     margin: 0 auto;
   }
-  
+
   .scouter-frame {
     width: 100%;
     height: 100%;
   }
-  
+
   .hero-visual {
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
   }
-  
+
   .features-section,
   .how-to-use-section,
   .scanner-section {
@@ -697,38 +705,38 @@ body {
     width: 100%;
     overflow: hidden;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .feature-card {
     padding: 1.5rem;
     margin: 0 1rem;
   }
-  
+
   .steps-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
     max-width: 100%;
   }
-  
+
   .step-card {
     padding: 1.5rem;
     margin: 0 1rem;
   }
-  
+
   .step-arrow {
     transform: rotate(90deg);
     margin: 1rem 0;
   }
-  
+
   .scanner-content {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
-  
+
   .scanner-input,
   .scanner-display {
     display: flex;
@@ -736,16 +744,16 @@ body {
     width: 100%;
     padding: 0 1rem;
   }
-  
+
   .scanner-display {
     overflow: hidden;
   }
-  
+
   .section-title {
     font-size: 1.8rem;
     margin-bottom: 2rem;
   }
-  
+
   .features-container,
   .how-to-use-container,
   .scanner-container {
@@ -753,7 +761,7 @@ body {
     max-width: 100%;
     width: 100%;
   }
-  
+
   /* Input container mobile fix */
   .input-container {
     min-width: auto;
@@ -762,25 +770,25 @@ body {
     margin: 0 auto;
     padding: 10px;
   }
-  
+
   .username-input {
     width: 150px;
     margin-right: 5px;
     margin-bottom: 1rem;
   }
-  
+
   .scan-button {
     width: 100%;
     margin-top: 0.5rem;
   }
-  
+
   .scouter-container {
     width: 100%;
     max-width: 100%;
     padding: 10px;
     overflow: hidden;
   }
-  
+
   .scouter-container svg {
     width: 100%;
     height: auto;
@@ -788,7 +796,7 @@ body {
     max-height: 350px;
     display: block;
   }
-  
+
   .download-svg-button {
     font-size: 13px;
     padding: 9px 18px;
@@ -885,7 +893,7 @@ body {
 .token-button {
   padding: 8px 15px;
   font-size: 12px;
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
   border: none;
   border-radius: 3px;
@@ -991,8 +999,13 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .inner-frame {
@@ -1004,7 +1017,9 @@ body {
 }
 
 @keyframes rotate-dash {
-  to { stroke-dashoffset: 60; }
+  to {
+    stroke-dashoffset: 60;
+  }
 }
 
 .scan-line {
@@ -1018,8 +1033,13 @@ body {
 }
 
 @keyframes blink-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .complete-msg {
@@ -1132,7 +1152,9 @@ body {
   max-width: 1680px; /* A4 2ページ分の横幅を想定 */
   border-radius: 5px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'Hiragino Kaku Gothic Pro', 'メイリオ', sans-serif;
+  font-family:
+    'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'Hiragino Kaku Gothic Pro', 'メイリオ',
+    sans-serif;
   font-size: 12px;
   line-height: 1.3;
   position: relative;
@@ -1333,7 +1355,10 @@ body {
   font-size: 10px;
 }
 
-.year-input, .month-input, .day-input, .age-input {
+.year-input,
+.month-input,
+.day-input,
+.age-input {
   border-bottom: 1px solid #000;
   display: inline-block;
   margin: 0 1px;
@@ -1343,7 +1368,9 @@ body {
   width: 30px;
 }
 
-.month-input, .day-input, .age-input {
+.month-input,
+.day-input,
+.age-input {
   width: 18px;
 }
 
@@ -1391,18 +1418,22 @@ body {
 }
 
 /* テーブルスタイル */
-.experience-section, .qualifications-section {
+.experience-section,
+.qualifications-section {
   margin-bottom: 12px;
 }
 
-.experience-table, .qualifications-table {
+.experience-table,
+.qualifications-table {
   width: 100%;
   border-collapse: collapse;
   border: 2px solid #000;
 }
 
-.experience-table th, .qualifications-table th,
-.experience-table td, .qualifications-table td {
+.experience-table th,
+.qualifications-table th,
+.experience-table td,
+.qualifications-table td {
   border: 1px solid #000;
   padding: 3px;
   text-align: left;
@@ -1411,7 +1442,8 @@ body {
   height: auto;
 }
 
-.experience-table th, .qualifications-table th {
+.experience-table th,
+.qualifications-table th {
   background: #f5f5f5;
   font-weight: bold;
   text-align: center;
@@ -1427,11 +1459,13 @@ body {
   width: 35px;
 }
 
-.experience-col, .qualification-col {
+.experience-col,
+.qualification-col {
   width: auto;
 }
 
-.experience-table td, .qualifications-table td {
+.experience-table td,
+.qualifications-table td {
   font-size: 9px;
   line-height: 1.2;
   min-height: 18px;
@@ -1439,7 +1473,8 @@ body {
 }
 
 /* スキルセクション */
-.skills-section, .personal-note-section {
+.skills-section,
+.personal-note-section {
   margin-top: 12px;
 }
 
@@ -1452,7 +1487,8 @@ body {
   font-size: 10px;
 }
 
-.skills-content, .personal-note-content {
+.skills-content,
+.personal-note-content {
   border: 1px solid #000;
   border-top: none;
   padding: 10px;
@@ -1522,7 +1558,8 @@ body {
 }
 
 /* 編集ボタンと保存ボタンのスタイル */
-.edit-button, .save-button {
+.edit-button,
+.save-button {
   padding: 8px 16px;
   font-size: 14px;
   border: none;
@@ -1584,7 +1621,9 @@ body {
   width: 50px;
 }
 
-.month-input.editable-input, .day-input.editable-input, .age-input.editable-input {
+.month-input.editable-input,
+.day-input.editable-input,
+.age-input.editable-input {
   width: 30px;
 }
 
@@ -1593,7 +1632,8 @@ body {
   width: 100%;
 }
 
-.phone-input, .email-input {
+.phone-input,
+.email-input {
   font-size: 10px;
   width: 100%;
 }
@@ -1851,7 +1891,7 @@ body {
     padding: 5px;
     overflow-x: auto;
   }
-  
+
   .resume-pages {
     transform: scale(0.85);
     transform-origin: top left;
@@ -1866,7 +1906,7 @@ body {
     padding: 5px;
     overflow-x: auto;
   }
-  
+
   .resume-pages {
     transform: scale(0.7);
     transform-origin: top left;
@@ -1881,13 +1921,13 @@ body {
     padding: 5px;
     overflow-x: auto;
   }
-  
+
   .resume-pages {
     transform: scale(0.55);
     transform-origin: top left;
     margin-bottom: -45%;
   }
-  
+
   /* コントロールボタンの調整 */
   .resume-controls {
     position: fixed;
@@ -1903,7 +1943,7 @@ body {
     overflow-x: auto;
     overflow-y: auto;
   }
-  
+
   .resume-content {
     width: 100vw;
     padding: 0;
@@ -1911,14 +1951,14 @@ body {
     border-radius: 0;
     overflow-x: auto;
   }
-  
+
   .resume-pages {
     transform: scale(0.4);
     transform-origin: top left;
     margin-bottom: -60%;
     margin-left: -30%;
   }
-  
+
   /* コントロールボタンをより小さく */
   .resume-controls {
     position: fixed;
@@ -1927,12 +1967,14 @@ body {
     transform: scale(0.85);
     transform-origin: top right;
   }
-  
-  .download-button, .edit-button, .save-button {
+
+  .download-button,
+  .edit-button,
+  .save-button {
     padding: 6px 12px;
     font-size: 12px;
   }
-  
+
   .close-button {
     width: 30px;
     height: 30px;
@@ -1946,7 +1988,7 @@ body {
     overflow-x: auto;
     overflow-y: auto;
   }
-  
+
   .resume-content {
     width: 100vw;
     padding: 0;
@@ -1954,14 +1996,14 @@ body {
     border-radius: 0;
     overflow-x: auto;
   }
-  
+
   .resume-pages {
     transform: scale(0.3);
     transform-origin: top left;
     margin-bottom: -70%;
     margin-left: -35%;
   }
-  
+
   /* コントロールボタンをさらに小さく */
   .resume-controls {
     position: fixed;
@@ -1971,12 +2013,14 @@ body {
     transform-origin: top right;
     gap: 5px;
   }
-  
-  .download-button, .edit-button, .save-button {
+
+  .download-button,
+  .edit-button,
+  .save-button {
     padding: 5px 10px;
     font-size: 11px;
   }
-  
+
   .close-button {
     width: 25px;
     height: 25px;
@@ -2000,44 +2044,44 @@ body {
   .resume-content::-webkit-scrollbar {
     height: 8px;
   }
-  
+
   .resume-content::-webkit-scrollbar-track {
     background: #f1f1f1;
   }
-  
+
   .resume-content::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 4px;
   }
-  
+
   .resume-content::-webkit-scrollbar-thumb:hover {
     background: #555;
   }
-  
+
   /* その他のUI要素の調整 */
   .input-container {
     min-width: auto;
     width: 90%;
   }
-  
+
   .token-controls {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .token-input {
     width: 100%;
   }
-  
+
   /* GitHub情報セクションのレスポンシブ対応 */
   .github-section tbody {
     grid-template-columns: 1fr;
   }
-  
+
   .github-section tbody td:nth-child(odd) {
     border-right: 1px solid #000;
   }
-  
+
   .github-section tbody td:nth-child(even) {
     border-left: 1px solid #000;
   }
@@ -2049,19 +2093,19 @@ body {
     size: A4;
     margin: 0;
   }
-  
+
   /* 印刷時は全ての要素をリセット */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
+
   body {
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
   }
-  
+
   .resume-modal {
     background: none !important;
     position: static !important;
@@ -2069,7 +2113,7 @@ body {
     height: 100% !important;
     overflow: visible !important;
   }
-  
+
   .resume-content {
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -2080,11 +2124,11 @@ body {
     transform: none !important;
     overflow: visible !important;
   }
-  
+
   .resume-controls {
     display: none !important;
   }
-  
+
   /* 編集用のボタンとコントロールを非表示 */
   .add-row-btn,
   .remove-row-btn,
@@ -2101,7 +2145,7 @@ body {
   .scouter-actions {
     display: none !important;
   }
-  
+
   /* 編集モードの入力フィールドを通常のテキストとして表示 */
   .editable-input,
   .editable-textarea,
@@ -2113,7 +2157,7 @@ body {
     -moz-appearance: none !important;
     appearance: none !important;
   }
-  
+
   .resume-pages {
     display: block !important;
     gap: 0 !important;
@@ -2121,7 +2165,7 @@ body {
     min-width: auto !important;
     margin: 0 !important;
   }
-  
+
   .resume-page {
     /* A4サイズに正確に設定 */
     width: 210mm !important;
@@ -2139,88 +2183,95 @@ body {
     display: block !important;
     position: relative !important;
   }
-  
+
   .resume-page:last-child {
     page-break-after: auto !important;
   }
-  
+
   /* 各要素のサイズを印刷用に調整 */
   .resume-header {
     margin-bottom: 15px !important;
   }
-  
+
   .resume-title {
     font-size: 24px !important;
   }
-  
+
   .date-label {
     font-size: 10px !important;
   }
-  
+
   .photo-frame {
     width: 30mm !important;
     height: 40mm !important;
   }
-  
+
   .info-row label {
     font-size: 9px !important;
     padding: 3px !important;
   }
-  
+
   .info-content {
     font-size: 10px !important;
     padding: 3px !important;
   }
-  
-  .experience-table, .qualifications-table {
+
+  .experience-table,
+  .qualifications-table {
     font-size: 9px !important;
   }
-  
-  .experience-table th, .qualifications-table th,
-  .experience-table td, .qualifications-table td {
+
+  .experience-table th,
+  .qualifications-table th,
+  .experience-table td,
+  .qualifications-table td {
     padding: 2px 3px !important;
     font-size: 8px !important;
     height: auto !important;
     min-height: 15px !important;
   }
-  
+
   .section-header {
     font-size: 10px !important;
     padding: 4px !important;
   }
-  
-  .skills-content, .personal-note-content {
+
+  .skills-content,
+  .personal-note-content {
     font-size: 8px !important;
     padding: 8px !important;
     min-height: 60px !important;
   }
-  
+
   /* GitHub情報の2カラムレイアウトを維持 */
   .github-section tbody {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
   }
-  
+
   .github-section tbody td {
     font-size: 7px !important;
     padding: 3px !important;
   }
-  
+
   /* 改ページの制御 */
-  .experience-section, .qualifications-section, .github-section, .skills-section {
+  .experience-section,
+  .qualifications-section,
+  .github-section,
+  .skills-section {
     page-break-inside: avoid !important;
   }
-  
+
   /* 注釈や説明文を非表示 */
   .note {
     display: none !important;
   }
-  
+
   /* 左右のページの区切り */
   .resume-left {
     border-right: none !important;
   }
-  
+
   /* レスポンシブ用のtransformをすべて無効化 */
   .resume-modal,
   .resume-content,

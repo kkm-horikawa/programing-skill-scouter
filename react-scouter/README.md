@@ -22,11 +22,13 @@ An anime-style scouter for analyzing GitHub user skills and statistics, built wi
 ### Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -46,11 +48,13 @@ The built files will be in the `dist` directory.
 ### GitHub Pages
 
 1. Install gh-pages (if not already installed):
+
 ```bash
 npm install -g gh-pages
 ```
 
 2. Deploy:
+
 ```bash
 npm run deploy
 ```
@@ -65,6 +69,7 @@ npm run deploy
 ### Other Static Hosts
 
 The built `dist` folder can be deployed to any static hosting service like:
+
 - Netlify
 - Vercel
 - AWS S3
@@ -104,6 +109,7 @@ src/
 ## API Usage
 
 The application uses the GitHub REST API v3 to fetch:
+
 - User profile information
 - Repository data and statistics
 - Programming language usage

@@ -29,7 +29,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   hasDetailedData,
   isResumeOpen,
   onCloseResume,
-  techData
+  techData,
 }) => {
   const [showScanner, setShowScanner] = useState(false);
 
@@ -52,8 +52,10 @@ const LandingPage: React.FC<LandingPageProps> = ({
               <span className="hero-title-sub">v2.0</span>
             </h1>
             <p className="hero-description">
-              某世界的漫画風のスカウターでGitHubユーザーの<br/>
-              プログラミングスキルを分析し、<br/>
+              某世界的漫画風のスカウターでGitHubユーザーの
+              <br />
+              プログラミングスキルを分析し、
+              <br />
               <strong>エンジニア向け履歴書</strong>を自動生成
             </p>
             <div className="hero-features">
@@ -98,7 +100,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
               <div className="feature-icon-large">🎯</div>
               <h3>高精度分析</h3>
               <p>
-                GitHubのリポジトリ、コミット履歴、言語使用率、<br/>
+                GitHubのリポジトリ、コミット履歴、言語使用率、
+                <br />
                 スター数など多角的な指標で総合的に分析
               </p>
             </div>
@@ -106,7 +109,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
               <div className="feature-icon-large">📈</div>
               <h3>パワーレベル算出</h3>
               <p>
-                独自のアルゴリズムでプログラミングスキルを<br/>
+                独自のアルゴリズムでプログラミングスキルを
+                <br />
                 数値化。客観的なスキル評価が可能
               </p>
             </div>
@@ -114,7 +118,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
               <div className="feature-icon-large">📋</div>
               <h3>履歴書自動生成</h3>
               <p>
-                日本の正式な履歴書フォーマットで<br/>
+                日本の正式な履歴書フォーマットで
+                <br />
                 エンジニア向けの技術履歴書を自動作成
               </p>
             </div>
@@ -155,15 +160,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Scanner Section */}
-      <section 
-        id="scanner-section" 
+      <section
+        id="scanner-section"
         className={`scanner-section ${showScanner ? 'active' : ''}`}
       >
         <div className="scanner-container">
           <h2 className="section-title">スキル分析を開始</h2>
           <div className="scanner-content">
             <div className="scanner-input">
-              <UserInput 
+              <UserInput
                 onScan={onScan}
                 isScanning={isScanning}
                 onShowResume={onShowResume}
@@ -171,7 +176,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               />
             </div>
             <div className="scanner-display">
-              <ScouterDisplay 
+              <ScouterDisplay
                 isScanning={isScanning}
                 scanData={scanData}
                 usernames={usernames}
@@ -184,7 +189,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Resume Modal */}
-      <ResumeModal 
+      <ResumeModal
         isOpen={isResumeOpen}
         onClose={onCloseResume}
         techData={techData}

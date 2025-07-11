@@ -12,7 +12,7 @@ const UserInput: React.FC<UserInputProps> = ({
   onScan,
   isScanning,
   onShowResume,
-  hasDetailedData
+  hasDetailedData,
 }) => {
   const [username, setUsername] = useState('torvalds');
   const [additionalUsernames, setAdditionalUsernames] = useState<string[]>([]);
@@ -33,24 +33,30 @@ const UserInput: React.FC<UserInputProps> = ({
   }, []);
 
   const getHeaders = (githubToken: string): HeadersInit => {
-    return githubToken ? { 'Authorization': `token ${githubToken}` } : {};
+    return githubToken ? { Authorization: `token ${githubToken}` } : {};
   };
 
   const checkRateLimit = async (githubToken: string) => {
     try {
       const headers = getHeaders(githubToken);
-      const response = await fetch('https://api.github.com/rate_limit', { headers });
+      const response = await fetch('https://api.github.com/rate_limit', {
+        headers,
+      });
       const data: GitHubRateLimit = await response.json();
       setRateLimit(data);
-      
+
       const remaining = data.rate.remaining;
       const limit = data.rate.limit;
       const reset = new Date(data.rate.reset * 1000);
-      
+
       if (githubToken) {
-        setTokenStatus(`認証済み: ${remaining}/${limit} 回 (${reset.toLocaleTimeString()}にリセット)`);
+        setTokenStatus(
+          `認証済み: ${remaining}/${limit} 回 (${reset.toLocaleTimeString()}にリセット)`
+        );
       } else {
-        setTokenStatus(`未認証: ${remaining}/${limit} 回 (${reset.toLocaleTimeString()}にリセット)`);
+        setTokenStatus(
+          `未認証: ${remaining}/${limit} 回 (${reset.toLocaleTimeString()}にリセット)`
+        );
       }
     } catch (error) {
       console.error('Rate limit check failed:', error);
@@ -64,12 +70,15 @@ const UserInput: React.FC<UserInputProps> = ({
       setTokenStatus('トークンを入力してください');
       return;
     }
-    
-    if (!tokenValue.startsWith('ghp_') && !tokenValue.startsWith('github_pat_')) {
+
+    if (
+      !tokenValue.startsWith('ghp_') &&
+      !tokenValue.startsWith('github_pat_')
+    ) {
       setTokenStatus('無効なトークン形式です');
       return;
     }
-    
+
     localStorage.setItem('github_token', tokenValue);
     setTokenStatus('トークンを保存しました');
     checkRateLimit(tokenValue);
@@ -83,9 +92,10 @@ const UserInput: React.FC<UserInputProps> = ({
   };
 
   const handleScan = () => {
-    const allUsernames = [username.trim(), ...additionalUsernames]
-      .filter(u => u.length > 0);
-    
+    const allUsernames = [username.trim(), ...additionalUsernames].filter(
+      (u) => u.length > 0
+    );
+
     if (allUsernames.length > 0) {
       onScan(allUsernames);
     }
@@ -115,7 +125,7 @@ const UserInput: React.FC<UserInputProps> = ({
   return (
     <div className="input-container">
       <h2 className="title">GitHub Power Scouter</h2>
-      
+
       <div className="scan-section">
         <input
           type="text"
@@ -145,14 +155,17 @@ const UserInput: React.FC<UserInputProps> = ({
           border: '1px solid #0f0',
           padding: '5px 10px',
           cursor: 'pointer',
-          borderRadius: '3px'
+          borderRadius: '3px',
         }}
       >
         {showMultipleAccounts ? '▼' : '▶'} 複数アカウント合算
       </button>
 
       {showMultipleAccounts && (
-        <div className="multiple-accounts-section" style={{ marginTop: '10px' }}>
+        <div
+          className="multiple-accounts-section"
+          style={{ marginTop: '10px' }}
+        >
           <div style={{ fontSize: '11px', color: '#0f0', marginBottom: '5px' }}>
             企業アカウントなど追加のGitHubアカウントを入力
           </div>
@@ -175,7 +188,7 @@ const UserInput: React.FC<UserInputProps> = ({
                   border: 'none',
                   padding: '5px 10px',
                   cursor: 'pointer',
-                  borderRadius: '3px'
+                  borderRadius: '3px',
                 }}
               >
                 ×
@@ -193,7 +206,7 @@ const UserInput: React.FC<UserInputProps> = ({
               cursor: 'pointer',
               borderRadius: '3px',
               fontSize: '12px',
-              marginTop: '5px'
+              marginTop: '5px',
             }}
           >
             + アカウントを追加
