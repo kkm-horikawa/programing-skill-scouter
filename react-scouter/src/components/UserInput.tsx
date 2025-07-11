@@ -234,7 +234,7 @@ const UserInput: React.FC<UserInputProps> = ({
         <div className="token-status">{tokenStatus}</div>
         <div className="token-info">
           <a
-            href="https://github.com/settings/tokens/new?scopes=public_repo,read:user"
+            href="https://github.com/settings/tokens/new?scopes=public_repo,read:user,read:org"
             target="_blank"
             rel="noopener noreferrer"
           >
