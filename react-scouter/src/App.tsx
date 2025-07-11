@@ -6,18 +6,22 @@ import './App.css';
 function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanData, setScanData] = useState<PowerLevelResult | null>(null);
-  const [detailedTechData, setDetailedTechData] = useState<DetailedTechData | null>(null);
+  const [detailedTechData, setDetailedTechData] =
+    useState<DetailedTechData | null>(null);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
-  const [currentUsername, setCurrentUsername] = useState('');
+  const [currentUsernames, setCurrentUsernames] = useState<string[]>([]);
 
-  const handleScan = (username: string) => {
-    setCurrentUsername(username);
+  const handleScan = (usernames: string[]) => {
+    setCurrentUsernames(usernames);
     setIsScanning(true);
     setScanData(null);
     setDetailedTechData(null);
   };
 
-  const handleScanComplete = (data: PowerLevelResult, techData: DetailedTechData) => {
+  const handleScanComplete = (
+    data: PowerLevelResult,
+    techData: DetailedTechData
+  ) => {
     setScanData(data);
     setDetailedTechData(techData);
     setIsScanning(false);
@@ -40,11 +44,11 @@ function App() {
   };
 
   return (
-    <LandingPage 
+    <LandingPage
       onScan={handleScan}
       isScanning={isScanning}
       scanData={scanData}
-      username={currentUsername}
+      usernames={currentUsernames}
       onScanComplete={handleScanComplete}
       onScanError={handleScanError}
       onShowResume={handleShowResume}

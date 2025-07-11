@@ -235,6 +235,20 @@ export interface ContributionDetails {
   currentStreak: number;
 }
 
+// ライブラリ情報の型定義
+export interface LibraryInfo {
+  name: string;
+  category: string;
+  usage: number; // 使用しているリポジトリ数
+  versions: string[]; // 使用されているバージョン
+}
+
+export interface LanguageLibraries {
+  language: string;
+  libraries: LibraryInfo[];
+  totalLibraries: number;
+}
+
 export interface DetailedTechData {
   username: string;
   powerLevel: number;
@@ -262,5 +276,11 @@ export interface DetailedTechData {
     totalCommits: number;
     totalPullRequests: number;
     totalIssues: number;
+  };
+  // ライブラリ情報
+  libraryAnalysis?: {
+    languages: LanguageLibraries[];
+    topLibraries: LibraryInfo[]; // 全言語での上位ライブラリ
+    totalUniqueLibraries: number;
   };
 }
