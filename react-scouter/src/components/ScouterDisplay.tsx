@@ -1091,6 +1091,10 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           fill: #00ffff;
           font-size: 14px;
         }
+        .date {
+          fill: #00aa00;
+          font-size: 10px;
+        }
         .special-ability {
           fill: #ffff00;
         }
@@ -1219,25 +1223,29 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           {isScanning ? 'SCANNING TARGET...' : 'STANDBY'}
         </text>
 
-        <text x="5%" y="26%" className="label scouter-text">
+        <text x="5%" y="20%" className="date scouter-text" style={{ fontSize: '0.7em' }}>
+          SCAN DATE: {new Date().toLocaleDateString('ja-JP')}
+        </text>
+
+        <text x="5%" y="30%" className="label scouter-text">
           POWER LEVEL:
         </text>
 
-        <text x="5%" y="36%" className="power-level scouter-text">
+        <text x="5%" y="40%" className="power-level scouter-text">
           {isScanning && !showComplete
             ? scanningPowerLevel.toLocaleString()
             : currentPowerLevel.toLocaleString()}
         </text>
 
         {showComplete && (
-          <text x="5%" y="44%" className="complete-msg scouter-text">
+          <text x="5%" y="48%" className="complete-msg scouter-text">
             SCAN COMPLETE
           </text>
         )}
 
         {displayStats && (
           <>
-            <text x="5%" y="52%" className="rank scouter-text">
+            <text x="5%" y="56%" className="rank scouter-text">
               RANK: {determineRank(displayStats.power)}
             </text>
 
@@ -1280,26 +1288,26 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
             </g>
 
             <g className="detail-stats">
-              <text x="5%" y="62%" className="label scouter-text">
+              <text x="5%" y="66%" className="label scouter-text">
                 LANGUAGE PROFICIENCY
               </text>
               {displayStats.stats.languages.slice(0, 3).map((lang, i) => (
                 <text
                   key={i}
                   x={`${5 + i * 20}%`}
-                  y="66%"
+                  y="70%"
                   className="small-label scouter-text"
                 >
                   {lang.name}: {lang.percentage}%
                 </text>
               ))}
 
-              <text x="5%" y="74%" className="label scouter-text">
+              <text x="5%" y="78%" className="label scouter-text">
                 SPECIAL ABILITIES
               </text>
               <text
                 x="5%"
-                y="78%"
+                y="82%"
                 className="special-ability scouter-text"
                 style={{ fontSize: '0.7em' }}
               >
@@ -1317,7 +1325,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
               ).split(' + ').length > 2 && (
                 <text
                   x="5%"
-                  y="82%"
+                  y="86%"
                   className="special-ability scouter-text"
                   style={{ fontSize: '0.7em' }}
                 >
