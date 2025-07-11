@@ -930,7 +930,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
 
   return (
     <div className="scouter-container">
-      <svg viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg" style={{width: '100%', height: 'auto', maxWidth: '500px'}}>
+      <svg viewBox="0 0 700 450" xmlns="http://www.w3.org/2000/svg" style={{width: '100%', height: 'auto', maxWidth: '800px'}}>
         <defs>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -950,85 +950,85 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         </defs>
         
         <rect width="100%" height="100%" fill="#000000" rx="2%"/>
-        <rect x="2%" y="3.3%" width="96%" height="93.3%" className="frame" rx="1%"/>
-        <rect x="4%" y="6.7%" width="92%" height="86.7%" className="inner-frame" rx="0.6%"/>
-        <rect x="4%" y="6.7%" width="92%" height="86.7%" className="scan-line"/>
+        <rect x="1.5%" y="2.5%" width="97%" height="95%" className="frame" rx="1%"/>
+        <rect x="3%" y="5%" width="94%" height="90%" className="inner-frame" rx="0.6%"/>
+        <rect x="3%" y="5%" width="94%" height="90%" className="scan-line"/>
         
-        <text x="6%" y="13.3%" className="username scouter-text">
+        <text x="5%" y="10%" className="username scouter-text" style={{fontSize: '0.9em'}}>
           {usernames.length > 0 ? `TARGET: ${usernames.map(u => u.toUpperCase()).join(' + ')}` : 'TARGET: '}
         </text>
         
-        <text x="6%" y="21.7%" className="label scouter-text">
+        <text x="5%" y="16%" className="label scouter-text">
           {isScanning ? 'SCANNING TARGET...' : 'STANDBY'}
         </text>
         
-        <text x="6%" y="35%" className="label scouter-text">POWER LEVEL:</text>
+        <text x="5%" y="26%" className="label scouter-text">POWER LEVEL:</text>
         
-        <text x="6%" y="48.3%" className="power-level scouter-text">
+        <text x="5%" y="36%" className="power-level scouter-text">
           {isScanning && !showComplete ? scanningPowerLevel.toLocaleString() : currentPowerLevel.toLocaleString()}
         </text>
         
         {showComplete && (
-          <text x="6%" y="58.3%" className="complete-msg scouter-text">
+          <text x="5%" y="44%" className="complete-msg scouter-text">
             SCAN COMPLETE
           </text>
         )}
         
         {displayStats && (
           <>
-            <text x="6%" y="68.3%" className="rank scouter-text">
+            <text x="5%" y="52%" className="rank scouter-text">
               RANK: {determineRank(displayStats.power)}
             </text>
             
             <g className="stats-group">
-              <text x="56%" y="21.7%" className="label scouter-text">BASIC STATS</text>
-              <text x="56%" y="26.7%" className="small-label scouter-text">
+              <text x="50%" y="16%" className="label scouter-text">BASIC STATS</text>
+              <text x="50%" y="20%" className="small-label scouter-text">
                 REPOS: {displayStats.stats.repos} ({displayStats.stats.originalRepos} ORIG)
               </text>
-              <text x="56%" y="31.7%" className="small-label scouter-text">
+              <text x="50%" y="24%" className="small-label scouter-text">
                 STARS: {displayStats.stats.stars.toLocaleString()}
               </text>
-              <text x="56%" y="36.7%" className="small-label scouter-text">
+              <text x="50%" y="28%" className="small-label scouter-text">
                 FOLLOWERS: {displayStats.stats.followers.toLocaleString()}
               </text>
-              <text x="56%" y="41.7%" className="small-label scouter-text">
+              <text x="50%" y="32%" className="small-label scouter-text">
                 ACCOUNT AGE: {displayStats.stats.accountAge}Y
               </text>
               
-              <text x="76%" y="21.7%" className="label scouter-text">ACTIVITY</text>
-              <text x="76%" y="26.7%" className="small-label scouter-text">
+              <text x="70%" y="16%" className="label scouter-text">ACTIVITY</text>
+              <text x="70%" y="20%" className="small-label scouter-text">
                 CONTRIBS: {contributionDetails ? contributionDetails.totalContributions.toLocaleString() : displayStats.stats.activity.commits}
               </text>
-              <text x="76%" y="31.7%" className="small-label scouter-text">
+              <text x="70%" y="24%" className="small-label scouter-text">
                 PULL REQS: {displayStats.stats.activity.pullRequests}
               </text>
-              <text x="76%" y="36.7%" className="small-label scouter-text">
+              <text x="70%" y="28%" className="small-label scouter-text">
                 ISSUES: {displayStats.stats.activity.issues}
               </text>
-              <text x="76%" y="41.7%" className="small-label scouter-text">
+              <text x="70%" y="32%" className="small-label scouter-text">
                 30D ACT: {displayStats.stats.activity.recentContributions}
               </text>
             </g>
             
             <g className="detail-stats">
-              <text x="6%" y="78.3%" className="label scouter-text">LANGUAGE PROFICIENCY</text>
+              <text x="5%" y="62%" className="label scouter-text">LANGUAGE PROFICIENCY</text>
               {displayStats.stats.languages.slice(0, 3).map((lang, i) => (
-                <text key={i} x={`${6 + i * 20}%`} y="83.3%" className="small-label scouter-text">
+                <text key={i} x={`${5 + i * 20}%`} y="66%" className="small-label scouter-text">
                   {lang.name}: {lang.percentage}%
                 </text>
               ))}
               
-              <text x="6%" y="88%" className="label scouter-text">SPECIAL ABILITIES</text>
-              <text x="6%" y="92%" className="special-ability scouter-text" style={{fontSize: '0.6em'}}>
+              <text x="5%" y="74%" className="label scouter-text">SPECIAL ABILITIES</text>
+              <text x="5%" y="78%" className="special-ability scouter-text" style={{fontSize: '0.7em'}}>
                 {determineSpecialAbility(displayStats.stats, contributionDetails).split(' + ').slice(0, 2).join(' + ')}
               </text>
               {determineSpecialAbility(displayStats.stats, contributionDetails).split(' + ').length > 2 && (
-                <text x="6%" y="95%" className="special-ability scouter-text" style={{fontSize: '0.6em'}}>
+                <text x="5%" y="82%" className="special-ability scouter-text" style={{fontSize: '0.7em'}}>
                   + {determineSpecialAbility(displayStats.stats, contributionDetails).split(' + ').slice(2, 4).join(' + ')}
                 </text>
               )}
               {determineSpecialAbility(displayStats.stats, contributionDetails).split(' + ').length > 4 && (
-                <text x="6%" y="98%" className="special-ability scouter-text" style={{fontSize: '0.6em'}}>
+                <text x="5%" y="86%" className="special-ability scouter-text" style={{fontSize: '0.7em'}}>
                   + {determineSpecialAbility(displayStats.stats, contributionDetails).split(' + ').slice(4).join(' + ')}
                 </text>
               )}
@@ -1036,19 +1036,19 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           </>
         )}
         
-        <circle cx="94%" cy="10%" r="1%" className="status-dot"/>
+        <circle cx="94%" cy="8%" r="0.8%" className="status-dot"/>
         
         {isScanning && (
           <g className="progress-group">
-            <text x="56%" y="51.7%" className="small-label scouter-text">SCAN PROGRESS</text>
-            <rect x="56%" y="53.3%" width="20%" height="1.7%" className="progress-bar" rx="0.4%"/>
+            <text x="50%" y="40%" className="small-label scouter-text">SCAN PROGRESS</text>
+            <rect x="50%" y="42%" width="25%" height="1.5%" className="progress-bar" rx="0.3%"/>
             <rect 
-              x="56%" 
-              y="53.3%" 
-              width={`${progress * 0.2}%`} 
-              height="1.7%" 
+              x="50%" 
+              y="42%" 
+              width={`${progress * 0.25}%`} 
+              height="1.5%" 
               className="progress-fill" 
-              rx="0.4%"
+              rx="0.3%"
             />
           </g>
         )}
