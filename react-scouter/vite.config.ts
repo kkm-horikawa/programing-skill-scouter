@@ -9,6 +9,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false, // Disable source maps for production
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -16,5 +17,8 @@ export default defineConfig({
         },
       },
     },
+  },
+  esbuild: {
+    drop: ['console', 'debugger'],
   },
 });
