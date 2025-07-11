@@ -38,6 +38,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
   const [showComplete, setShowComplete] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const animationRef = useRef<number | undefined>(undefined);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (isScanning && usernames.length > 0) {
@@ -928,9 +929,101 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     }
   };
 
+  const downloadSVG = () => {
+    if (!svgRef.current || !displayStats) return;
+    
+    const svgElement = svgRef.current;
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(svgElement);
+    
+    // SVGにスタイルを埋め込む
+    const styleString = `
+      <style>
+        .scouter-text {
+          font-family: 'Orbitron', monospace;
+          font-weight: 700;
+          fill: #00ff00;
+        }
+        .power-level {
+          font-size: 42px;
+        }
+        .label {
+          font-size: 16px;
+          fill: #00cc00;
+        }
+        .small-label {
+          font-size: 11px;
+          fill: #00aa00;
+        }
+        .frame {
+          fill: none;
+          stroke: #00ff00;
+          stroke-width: 2;
+        }
+        .inner-frame {
+          fill: none;
+          stroke: #00aa00;
+          stroke-width: 1;
+        }
+        .scan-line {
+          fill: url(#scanline);
+          opacity: 0.3;
+        }
+        .username {
+          fill: #00ffff;
+          font-size: 14px;
+        }
+        .special-ability {
+          fill: #ffff00;
+        }
+        .status-dot {
+          fill: #00ff00;
+        }
+        .progress-bar {
+          fill: none;
+          stroke: #00aa00;
+          stroke-width: 1;
+        }
+        .progress-fill {
+          fill: #00ff00;
+        }
+        .rank {
+          fill: #ff6600;
+          font-size: 16px;
+        }
+        .complete-msg {
+          fill: #00ff00;
+          font-size: 16px;
+        }
+      </style>
+    `;
+    
+    // <defs>タグの後にスタイルを挿入
+    svgString = svgString.replace('<defs>', `<defs>${styleString}`);
+    
+    // ダウンロード用のBlobを作成
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    
+    // ダウンロードリンクを作成してクリック
+    const link = document.createElement('a');
+    link.href = url;
+    const mainUsername = usernames[0] || 'unknown';
+    const filename = usernames.length > 1 
+      ? `scouter-${mainUsername}-plus-${usernames.length - 1}-accounts.svg`
+      : `scouter-${mainUsername}.svg`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // メモリクリーンアップ
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="scouter-container">
-      <svg viewBox="0 0 700 450" xmlns="http://www.w3.org/2000/svg" style={{width: '100%', height: 'auto', maxWidth: '800px'}}>
+      <svg ref={svgRef} viewBox="0 0 700 450" xmlns="http://www.w3.org/2000/svg" style={{width: '100%', height: 'auto', maxWidth: '800px'}}>
         <defs>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -1056,6 +1149,18 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       
       {isScanning && (
         <div className="loading-message">{loadingMessage}</div>
+      )}
+      
+      {displayStats && showComplete && (
+        <div className="scouter-actions">
+          <button 
+            onClick={downloadSVG}
+            className="download-svg-button"
+            title="スカウター画像をダウンロード"
+          >
+            📥 スカウターをダウンロード
+          </button>
+        </div>
       )}
     </div>
   );
