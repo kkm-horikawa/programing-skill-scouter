@@ -8,10 +8,10 @@ function App() {
   const [scanData, setScanData] = useState<PowerLevelResult | null>(null);
   const [detailedTechData, setDetailedTechData] = useState<DetailedTechData | null>(null);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
-  const [currentUsername, setCurrentUsername] = useState('');
+  const [currentUsernames, setCurrentUsernames] = useState<string[]>([]);
 
-  const handleScan = (username: string) => {
-    setCurrentUsername(username);
+  const handleScan = (usernames: string[]) => {
+    setCurrentUsernames(usernames);
     setIsScanning(true);
     setScanData(null);
     setDetailedTechData(null);
@@ -44,7 +44,7 @@ function App() {
       onScan={handleScan}
       isScanning={isScanning}
       scanData={scanData}
-      username={currentUsername}
+      usernames={currentUsernames}
       onScanComplete={handleScanComplete}
       onScanError={handleScanError}
       onShowResume={handleShowResume}

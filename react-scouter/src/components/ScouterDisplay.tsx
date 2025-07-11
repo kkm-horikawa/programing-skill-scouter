@@ -9,13 +9,15 @@ import type {
   ProcessedLanguage, 
   ActivityData, 
   TechStack, 
-  LanguageStats 
+  LanguageStats,
+  ProfileReadme,
+  Organization
 } from '../types/github';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
   scanData: PowerLevelResult | null;
-  username: string;
+  usernames: string[];
   onScanComplete: (data: PowerLevelResult, techData: DetailedTechData) => void;
   onScanError: () => void;
 }
@@ -23,7 +25,7 @@ interface ScouterDisplayProps {
 const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
   isScanning,
   scanData,
-  username,
+  usernames,
   onScanComplete,
   onScanError
 }) => {
@@ -38,7 +40,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
   const animationRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (isScanning && username) {
+    if (isScanning && usernames.length > 0) {
       performScan();
       // スキャン中の数値アニメーション開始
       scanningIntervalRef.current = window.setInterval(() => {
@@ -61,7 +63,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         clearInterval(scanningIntervalRef.current);
       }
     };
-  }, [isScanning, username]);
+  }, [isScanning, usernames]);
 
   useEffect(() => {
     if (scanData) {
@@ -80,47 +82,107 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       setProgress(10);
       setLoadingMessage('スキャナーを初期化中...');
       
-      // Get user data
+      // 複数ユーザーのデータを取得
       const headers = getHeaders();
-      const userResponse = await fetch(`https://api.github.com/users/${username}`, { headers });
+      const allUsersData: ExtendedGitHubUser[] = [];
       
-      if (!userResponse.ok) {
-        throw new Error('User not found');
+      for (const username of usernames) {
+        const userResponse = await fetch(`https://api.github.com/users/${username}`, { headers });
+        
+        if (!userResponse.ok) {
+          console.warn(`User ${username} not found, skipping...`);
+          continue;
+        }
+        
+        const userData: ExtendedGitHubUser = await userResponse.json();
+        allUsersData.push(userData);
       }
       
-      const userData: ExtendedGitHubUser = await userResponse.json();
+      if (allUsersData.length === 0) {
+        throw new Error('No valid users found');
+      }
+      
+      // メインユーザーは最初のユーザー
+      const mainUserData = allUsersData[0];
       setProgress(20);
       setLoadingMessage('リポジトリを分析中...');
       
-      // Get repositories with pagination support
-      const repoData = await fetchAllRepositories(username);
+      // Get repositories with pagination support - 全ユーザー分を取得
+      setLoadingMessage(`${usernames.length}個のアカウントからリポジトリを収集中...`);
+      let allRepoData: GitHubRepo[] = [];
+      for (const username of usernames) {
+        try {
+          const repos = await fetchAllRepositories(username);
+          allRepoData = [...allRepoData, ...repos];
+        } catch (error) {
+          console.warn(`Failed to fetch repos for ${username}:`, error);
+        }
+      }
       setProgress(35);
       setLoadingMessage('言語能力を測定中...');
       
-      // Get language stats
-      const languageStats = await getLanguageStats(repoData);
+      // Get language stats - 全リポジトリから集計
+      const languageStats = await getLanguageStats(allRepoData);
       setProgress(50);
       setLoadingMessage('最近の活動を測定中...');
       
-      // Get activity data with enhanced metrics
-      const activityData = await getRecentActivity(username);
+      // Get activity data - 全ユーザー分を集計
+      const combinedActivityData = {
+        commits: 0,
+        pullRequests: 0,
+        issues: 0,
+        recentContributions: 0
+      };
+      
+      for (const username of usernames) {
+        try {
+          const activity = await getRecentActivity(username);
+          combinedActivityData.commits += activity.commits;
+          combinedActivityData.pullRequests += activity.pullRequests;
+          combinedActivityData.issues += activity.issues;
+          combinedActivityData.recentContributions += activity.recentContributions;
+        } catch (error) {
+          console.warn(`Failed to fetch activity for ${username}:`, error);
+        }
+      }
+      
       setProgress(65);
       setLoadingMessage('技術スタックを分析中...');
       
-      // Analyze tech stack
-      const techStack = await analyzeTechStack(repoData);
+      // Analyze tech stack - 全リポジトリから分析
+      const techStack = await analyzeTechStack(allRepoData);
       setProgress(80);
       setLoadingMessage('詳細プロフィール情報を取得中...');
       
-      // Fetch additional profile information
+      // Fetch additional profile information - メインユーザーのプロフィール情報
       const hasToken = !!localStorage.getItem('github_token');
-      const [profileReadme, organizations, contributionData, starredRepos, topicAnalysis, libraryData] = await Promise.allSettled([
-        fetchProfileReadme(username),
-        fetchOrganizations(username),
-        fetchContributionData(username),
-        fetchStarredRepositories(username),
-        analyzeRepositoryTopics(repoData),
-        hasToken ? analyzeLibraries(repoData) : Promise.resolve(null)
+      const mainUsername = usernames[0];
+      
+      // 各ユーザーのコントリビューションデータを取得
+      let totalContributionData = null;
+      const contributionPromises = usernames.map(username => fetchContributionData(username));
+      const allContributions = await Promise.allSettled(contributionPromises);
+      
+      // コントリビューションデータを合算
+      for (const result of allContributions) {
+        if (result.status === 'fulfilled' && result.value) {
+          if (!totalContributionData) {
+            totalContributionData = { ...result.value };
+          } else {
+            totalContributionData.totalContributions += result.value.totalContributions;
+            // ストリークは最大値を採用
+            totalContributionData.longestStreak = Math.max(totalContributionData.longestStreak, result.value.longestStreak);
+            totalContributionData.currentStreak = Math.max(totalContributionData.currentStreak, result.value.currentStreak);
+          }
+        }
+      }
+      
+      const [profileReadme, organizations, starredRepos, topicAnalysis, libraryData] = await Promise.allSettled([
+        fetchProfileReadme(mainUsername),
+        fetchOrganizations(mainUsername),
+        fetchStarredRepositories(mainUsername),
+        analyzeRepositoryTopics(allRepoData),
+        hasToken ? analyzeLibraries(allRepoData) : Promise.resolve(null)
       ]);
       
       setProgress(90);
@@ -136,38 +198,47 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         totalLanguageBytes = languageStats.reduce((sum, lang) => sum + lang.bytes, 0);
       }
       
-      const result = calculatePowerLevel(userData, repoData, languageStats, activityData, starredData, topicsData, contributionData.status === 'fulfilled' ? contributionData.value : null, totalLanguageBytes);
+      // 合算データでパワーレベルを計算
+      const aggregatedUserData = {
+        ...mainUserData,
+        public_repos: allUsersData.reduce((sum, user) => sum + user.public_repos, 0),
+        followers: allUsersData.reduce((sum, user) => sum + user.followers, 0),
+        following: allUsersData.reduce((sum, user) => sum + user.following, 0),
+        public_gists: allUsersData.reduce((sum, user) => sum + user.public_gists, 0)
+      };
+      
+      const result = calculatePowerLevel(aggregatedUserData, allRepoData, languageStats, combinedActivityData, starredData, topicsData, totalContributionData, totalLanguageBytes);
       setProgress(100);
       setLoadingMessage('分析完了！');
 
       // Create detailed tech data with extended information
       const detailedTechData: DetailedTechData = {
-        username: userData.login,
+        username: usernames.length > 1 ? `${mainUserData.login} + ${usernames.length - 1}アカウント` : mainUserData.login,
         powerLevel: result.power,
         languages: languageStats,
         techStack,
         stats: {
-          repos: userData.public_repos,
+          repos: aggregatedUserData.public_repos,
           stars: result.stats.stars,
-          contributions: activityData.recentContributions,
-          followers: userData.followers,
-          following: userData.following,
-          gists: userData.public_gists
+          contributions: combinedActivityData.recentContributions,
+          followers: aggregatedUserData.followers,
+          following: aggregatedUserData.following,
+          gists: aggregatedUserData.public_gists
         },
         // Extended information
         profile: {
-          ...userData,
-          twitter_username: userData.twitter_username,
-          gravatar_id: userData.gravatar_id || null,
-          organizations_url: userData.organizations_url,
-          repos_url: userData.repos_url,
-          events_url: userData.events_url,
-          received_events_url: userData.received_events_url,
-          type: userData.type,
-          site_admin: userData.site_admin || false,
+          ...mainUserData,
+          twitter_username: mainUserData.twitter_username,
+          gravatar_id: mainUserData.gravatar_id || null,
+          organizations_url: mainUserData.organizations_url,
+          repos_url: mainUserData.repos_url,
+          events_url: mainUserData.events_url,
+          received_events_url: mainUserData.received_events_url,
+          type: mainUserData.type,
+          site_admin: mainUserData.site_admin || false,
           profile: {
             pronouns: undefined,
-            work: userData.company || undefined,
+            work: mainUserData.company || undefined,
             education: undefined,
             interests: [],
             achievements: [],
@@ -184,7 +255,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           sections: {}
         },
         achievements: [], // GitHub doesn't provide public API for achievements
-        topRepositories: repoData.slice(0, 5).map(repo => ({
+        topRepositories: allRepoData.slice(0, 5).map(repo => ({
           ...repo,
           topics: [],
           license: null,
@@ -197,27 +268,27 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           disabled: false
         } as DetailedRepo)),
         organizations: organizations.status === 'fulfilled' ? organizations.value : [],
-        contributionDetails: contributionData.status === 'fulfilled' ? contributionData.value : {
-          totalContributions: activityData.recentContributions,
+        contributionDetails: totalContributionData || {
+          totalContributions: combinedActivityData.recentContributions,
           weeks: [],
           mostActiveDay: 'Unknown',
           longestStreak: 0,
           currentStreak: 0
         },
         accountMetrics: {
-          accountAge: userData.created_at ? Math.floor((Date.now() - new Date(userData.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+          accountAge: mainUserData.created_at ? Math.floor((Date.now() - new Date(mainUserData.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
           firstCommitDate: null,
-          lastActiveDate: userData.updated_at,
-          totalCommits: 0,
-          totalPullRequests: 0,
-          totalIssues: 0
+          lastActiveDate: mainUserData.updated_at,
+          totalCommits: combinedActivityData.commits,
+          totalPullRequests: combinedActivityData.pullRequests,
+          totalIssues: combinedActivityData.issues
         },
         libraryAnalysis: libraryData.status === 'fulfilled' && libraryData.value ? libraryData.value : undefined
       };
       
       // コントリビューション詳細を保存
-      if (contributionData.status === 'fulfilled') {
-        setContributionDetails(contributionData.value);
+      if (totalContributionData) {
+        setContributionDetails(totalContributionData);
       }
       
       setTimeout(() => {
@@ -884,7 +955,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         <rect x="4%" y="6.7%" width="92%" height="86.7%" className="scan-line"/>
         
         <text x="6%" y="13.3%" className="username scouter-text">
-          {username ? `TARGET: ${username.toUpperCase()}` : 'TARGET: '}
+          {usernames.length > 0 ? `TARGET: ${usernames.map(u => u.toUpperCase()).join(' + ')}` : 'TARGET: '}
         </text>
         
         <text x="6%" y="21.7%" className="label scouter-text">
@@ -1042,7 +1113,7 @@ const fetchProfileReadme = async (username: string): Promise<import('../types/gi
     const content = data.content ? atob(data.content) : null;
     
     // Basic README section analysis
-    const sections: any = {};
+    const sections: ProfileReadme['sections'] = {};
     if (content) {
       if (content.toLowerCase().includes('about') || content.toLowerCase().includes('introduction')) {
         sections.introduction = 'Available';
@@ -1101,7 +1172,7 @@ const fetchOrganizations = async (username: string): Promise<import('../types/gi
     }
     
     const data = await response.json();
-    return data.map((org: any) => ({
+    return data.map((org: Organization) => ({
       login: org.login,
       id: org.id,
       url: org.url,
@@ -1192,8 +1263,8 @@ const fetchContributionData = async (username: string): Promise<import('../types
     let currentStreak = 0;
     let lastContributionDate = null;
 
-    contributionCalendar.weeks.forEach((week: any) => {
-      week.contributionDays.forEach((day: any) => {
+    contributionCalendar.weeks.forEach((week: { contributionDays: Array<{ contributionCount: number; weekday: number; date: string }> }) => {
+      week.contributionDays.forEach((day) => {
         const dayOfWeek = day.weekday;
         dayContributions[dayOfWeek] += day.contributionCount;
         
@@ -1276,7 +1347,7 @@ const fallbackContributionAnalysis = async (username: string): Promise<import('.
     const contributionDays = new Set();
     const dayOfWeekCount = [0, 0, 0, 0, 0, 0, 0];
     
-    events.forEach((event: any) => {
+    events.forEach((event: GitHubEvent) => {
       const date = new Date(event.created_at);
       const dateStr = date.toISOString().split('T')[0];
       contributionDays.add(dateStr);
@@ -1419,7 +1490,7 @@ const fetchStarredRepositories = async (username: string): Promise<{ totalStarre
     const categories: Record<string, number> = {};
     
     // カテゴリ別に分類
-    starredRepos.forEach((repo: any) => {
+    starredRepos.forEach((repo: GitHubRepo) => {
       if (repo.language) {
         categories[repo.language] = (categories[repo.language] || 0) + 1;
       }
@@ -1466,7 +1537,7 @@ const analyzeRepositoryTopics = async (repos: GitHubRepo[]): Promise<Record<stri
             });
           }
         }
-      } catch (e) {
+      } catch {
         console.warn(`Failed to fetch topics for ${repo.full_name}`);
       }
     }
@@ -1693,7 +1764,7 @@ const analyzeLibraries = async (repos: GitHubRepo[]): Promise<import('../types/g
                   break;
                 }
                 if (inRequire || line.startsWith('require ')) {
-                  const match = line.match(/([a-zA-Z0-9\-_.\/]+)\s+v([\d.]+)/);
+                  const match = line.match(/([a-zA-Z0-9\-_./]+)\s+v([\d.]+)/);
                   if (match) {
                     const libName = match[1].split('/').pop() || match[1];
                     deps[libName] = match[2];
