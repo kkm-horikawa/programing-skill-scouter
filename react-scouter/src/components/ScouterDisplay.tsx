@@ -13,16 +13,20 @@ import type {
   ProfileReadme,
   Organization,
 } from '../types/github';
-import { scoutPublic } from '../skill-measurement/scout';
+import { scoutDeep, scoutPublic } from '../skill-measurement/scout';
 import { earnedBadgeLabels } from '../skill-measurement/badges';
 import { TIER_LABELS } from '../skill-measurement/ui/labels';
 import { detectTool } from '../skill-measurement/tooling-detect';
-import { fetchRepoTree } from '../skill-measurement/github-api';
+import {
+  fetchOwnedRepos,
+  fetchRepoTree,
+} from '../skill-measurement/github-api';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
   scanData: PowerLevelResult | null;
   usernames: string[];
+  deepMode: boolean;
   onScanComplete: (data: PowerLevelResult, techData: DetailedTechData) => void;
   onScanError: () => void;
 }
@@ -31,6 +35,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
   isScanning,
   scanData,
   usernames,
+  deepMode,
   onScanComplete,
   onScanError,
 }) => {
@@ -126,12 +131,18 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         `${usernames.length}個のアカウントからリポジトリを収集中...`
       );
       let allRepoData: GitHubRepo[] = [];
-      for (const username of usernames) {
-        try {
-          const repos = await fetchAllRepositories(username);
-          allRepoData = [...allRepoData, ...repos];
-        } catch (error) {
-          console.warn(`Failed to fetch repos for ${username}:`, error);
+      const deepToken = localStorage.getItem('github_token');
+      if (deepMode && deepToken) {
+        // DEEP分析: 本人の所有repo（private含む）を取得
+        allRepoData = await fetchOwnedRepos(deepToken);
+      } else {
+        for (const username of usernames) {
+          try {
+            const repos = await fetchAllRepositories(username);
+            allRepoData = [...allRepoData, ...repos];
+          } catch (error) {
+            console.warn(`Failed to fetch repos for ${username}:`, error);
+          }
         }
       }
       setProgress(35);
@@ -229,8 +240,12 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       };
 
       // 戦闘力は新エンジン（規律×採用の二軸）で測る。量ベースの旧スコアは廃止。
+      // DEEP分析では private 含む owned repo を読む scoutDeep を使う。
       const token = localStorage.getItem('github_token');
-      const scoutResult = await scoutPublic(mainUserData.login, token);
+      const scoutResult =
+        deepMode && token
+          ? await scoutDeep(token)
+          : await scoutPublic(mainUserData.login, token);
       const result: PowerLevelResult = {
         power: scoutResult.score.power,
         stats: computeStats(

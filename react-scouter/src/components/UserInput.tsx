@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { GitHubRateLimit } from '../types/github';
 
 interface UserInputProps {
-  onScan: (usernames: string[]) => void;
+  onScan: (usernames: string[], deepMode: boolean) => void;
   isScanning: boolean;
   onShowResume: () => void;
   hasDetailedData: boolean;
@@ -15,6 +15,7 @@ const UserInput: React.FC<UserInputProps> = ({
   hasDetailedData,
 }) => {
   const [username, setUsername] = useState('torvalds');
+  const [deepMode, setDeepMode] = useState(false);
   const [additionalUsernames, setAdditionalUsernames] = useState<string[]>([]);
   const [showMultipleAccounts, setShowMultipleAccounts] = useState(false);
   const [token, setToken] = useState('');
@@ -91,13 +92,36 @@ const UserInput: React.FC<UserInputProps> = ({
     checkRateLimit('');
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
+    if (deepMode) {
+      // DEEP分析: トークンの本人を private 込みで測る。login をトークンから解決。
+      const tok = localStorage.getItem('github_token');
+      if (!tok) {
+        setTokenStatus('DEEP分析には repo スコープのトークンが必要です');
+        return;
+      }
+      try {
+        const res = await fetch('https://api.github.com/user', {
+          headers: getHeaders(tok),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        if (!data.login) throw new Error('no login');
+        onScan([data.login], true);
+      } catch {
+        setTokenStatus(
+          '認証に失敗（repo スコープのトークンか確認してください）'
+        );
+      }
+      return;
+    }
+
     const allUsernames = [username.trim(), ...additionalUsernames].filter(
       (u) => u.length > 0
     );
 
     if (allUsernames.length > 0) {
-      onScan(allUsernames);
+      onScan(allUsernames, false);
     }
   };
 
@@ -127,11 +151,16 @@ const UserInput: React.FC<UserInputProps> = ({
       <div className="scan-section">
         <input
           type="text"
-          value={username}
+          value={deepMode ? '' : username}
           onChange={(e) => setUsername(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="GitHub Username"
+          placeholder={
+            deepMode
+              ? '自分のアカウント（トークンから自動）'
+              : 'GitHub Username'
+          }
           className="username-input"
+          disabled={deepMode}
         />
         <button
           onClick={handleScan}
@@ -141,6 +170,36 @@ const UserInput: React.FC<UserInputProps> = ({
           {isScanning ? 'SCANNING...' : 'SCAN'}
         </button>
       </div>
+
+      <label
+        className="deep-mode-toggle"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginTop: '8px',
+          fontSize: '12px',
+          color: deepMode ? '#36ff8b' : '#0f0',
+          cursor: 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={deepMode}
+          onChange={(e) => setDeepMode(e.target.checked)}
+        />
+        🔒 DEEP分析（自己分析・Private含む）
+        {deepMode && (
+          <a
+            href="https://github.com/settings/tokens/new?scopes=repo&description=Programmer%20Scouter%20deep"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#36ff8b', marginLeft: '4px' }}
+          >
+            repoスコープのトークン発行→
+          </a>
+        )}
+      </label>
 
       <button
         onClick={() => setShowMultipleAccounts(!showMultipleAccounts)}

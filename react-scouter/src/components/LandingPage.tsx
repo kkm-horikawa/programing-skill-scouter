@@ -4,10 +4,11 @@ import ResumeModal from './ResumeModal';
 import type { DetailedTechData, PowerLevelResult } from '../types/github';
 
 interface LandingPageProps {
-  onScan: (usernames: string[]) => void;
+  onScan: (usernames: string[], deepMode: boolean) => void;
   isScanning: boolean;
   scanData: PowerLevelResult | null;
   usernames: string[];
+  deepMode: boolean;
   onScanComplete: (data: PowerLevelResult, techData: DetailedTechData) => void;
   onScanError: () => void;
   onShowResume: () => void;
@@ -22,6 +23,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   isScanning,
   scanData,
   usernames,
+  deepMode,
   onScanComplete,
   onScanError,
   onShowResume,
@@ -59,6 +61,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               isScanning={isScanning}
               scanData={scanData}
               usernames={usernames}
+              deepMode={deepMode}
               onScanComplete={onScanComplete}
               onScanError={onScanError}
             />
