@@ -948,7 +948,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         {measuredAt && (
           <text
             x="5%"
-            y="13%"
+            y="15%"
             className="small-label scouter-text"
             style={{ fontSize: '0.7em' }}
           >
@@ -956,7 +956,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           </text>
         )}
 
-        <text x="5%" y="16%" className="label scouter-text">
+        <text x="5%" y="20%" className="label scouter-text">
           {isScanning ? 'SCANNING TARGET...' : 'STANDBY'}
         </text>
 
