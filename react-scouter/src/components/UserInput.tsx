@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 import type { GitHubRateLimit } from '../types/github';
+import {
+  fetchUserOrgMemberships,
+  type OrgMembership,
+} from '../skill-measurement/github-api';
 
 interface UserInputProps {
-  onScan: (usernames: string[]) => void;
+  onScan: (
+    usernames: string[],
+    deepMode: boolean,
+    orgLogins?: string[]
+  ) => void;
   isScanning: boolean;
   onShowResume: () => void;
   hasDetailedData: boolean;
@@ -15,6 +23,9 @@ const UserInput: React.FC<UserInputProps> = ({
   hasDetailedData,
 }) => {
   const [username, setUsername] = useState('torvalds');
+  const [deepMode, setDeepMode] = useState(false);
+  const [orgs, setOrgs] = useState<OrgMembership[]>([]);
+  const [selectedOrgs, setSelectedOrgs] = useState<Set<string>>(new Set());
   const [additionalUsernames, setAdditionalUsernames] = useState<string[]>([]);
   const [showMultipleAccounts, setShowMultipleAccounts] = useState(false);
   const [token, setToken] = useState('');
@@ -91,13 +102,60 @@ const UserInput: React.FC<UserInputProps> = ({
     checkRateLimit('');
   };
 
-  const handleScan = () => {
+  // DEEP分析ONで所属orgを取得。既定は未選択（勤務先などの不意の混入を防ぐため、
+  // 自分とみなす org をユーザーが明示的に選ぶ）。個人repoは常に対象。
+  const handleDeepToggle = async (checked: boolean) => {
+    setDeepMode(checked);
+    if (!checked) return;
+    const tok = localStorage.getItem('github_token');
+    if (!tok) {
+      setTokenStatus('DEEP分析には repo スコープのトークンが必要です');
+      return;
+    }
+    const memberships = await fetchUserOrgMemberships(tok);
+    setOrgs(memberships);
+    setSelectedOrgs(new Set());
+  };
+
+  const toggleOrg = (login: string) => {
+    setSelectedOrgs((prev) => {
+      const next = new Set(prev);
+      if (next.has(login)) next.delete(login);
+      else next.add(login);
+      return next;
+    });
+  };
+
+  const handleScan = async () => {
+    if (deepMode) {
+      // DEEP分析: トークンの本人を private 込みで測る。login をトークンから解決。
+      const tok = localStorage.getItem('github_token');
+      if (!tok) {
+        setTokenStatus('DEEP分析には repo スコープのトークンが必要です');
+        return;
+      }
+      try {
+        const res = await fetch('https://api.github.com/user', {
+          headers: getHeaders(tok),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        if (!data.login) throw new Error('no login');
+        onScan([data.login], true, [...selectedOrgs]);
+      } catch {
+        setTokenStatus(
+          '認証に失敗（repo スコープのトークンか確認してください）'
+        );
+      }
+      return;
+    }
+
     const allUsernames = [username.trim(), ...additionalUsernames].filter(
       (u) => u.length > 0
     );
 
     if (allUsernames.length > 0) {
-      onScan(allUsernames);
+      onScan(allUsernames, false);
     }
   };
 
@@ -124,16 +182,19 @@ const UserInput: React.FC<UserInputProps> = ({
 
   return (
     <div className="input-container">
-      <h2 className="title">GitHub Power Scouter</h2>
-
       <div className="scan-section">
         <input
           type="text"
-          value={username}
+          value={deepMode ? '' : username}
           onChange={(e) => setUsername(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="GitHub Username"
+          placeholder={
+            deepMode
+              ? '自分のアカウント（トークンから自動）'
+              : 'GitHub Username'
+          }
           className="username-input"
+          disabled={deepMode}
         />
         <button
           onClick={handleScan}
@@ -143,6 +204,76 @@ const UserInput: React.FC<UserInputProps> = ({
           {isScanning ? 'SCANNING...' : 'SCAN'}
         </button>
       </div>
+
+      <label
+        className="deep-mode-toggle"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginTop: '8px',
+          fontSize: '12px',
+          color: deepMode ? '#36ff8b' : '#0f0',
+          cursor: 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={deepMode}
+          onChange={(e) => handleDeepToggle(e.target.checked)}
+        />
+        🔒 DEEP分析（自己分析・Private含む）
+        {deepMode && (
+          <a
+            href="https://github.com/settings/tokens/new?scopes=repo&description=Programmer%20Scouter%20deep"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#36ff8b', marginLeft: '4px' }}
+          >
+            repoスコープのトークン発行→
+          </a>
+        )}
+      </label>
+
+      {deepMode && orgs.length > 0 && (
+        <div
+          className="org-select"
+          style={{
+            marginTop: '8px',
+            padding: '8px 10px',
+            border: '1px solid #1f6f3f',
+            borderRadius: '6px',
+            fontSize: '12px',
+          }}
+        >
+          <div style={{ color: '#8fe3aa', marginBottom: '4px' }}>
+            自分とみなす組織を選択（個人repoは常に対象）
+          </div>
+          {orgs.map((o) => (
+            <label
+              key={o.login}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#c8f7d4',
+                cursor: 'pointer',
+                padding: '2px 0',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selectedOrgs.has(o.login)}
+                onChange={() => toggleOrg(o.login)}
+              />
+              {o.login}
+              {o.isAdmin && (
+                <span style={{ color: '#6fbf8c' }}>（オーナー）</span>
+              )}
+            </label>
+          ))}
+        </div>
+      )}
 
       <button
         onClick={() => setShowMultipleAccounts(!showMultipleAccounts)}

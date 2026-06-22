@@ -42,6 +42,7 @@ export interface GitHubRepo {
   pushed_at: string;
   language: string | null;
   size: number;
+  default_branch: string;
 }
 
 export interface GitHubEvent {
@@ -282,5 +283,14 @@ export interface DetailedTechData {
     languages: LanguageLibraries[];
     topLibraries: LibraryInfo[]; // 全言語での上位ライブラリ
     totalUniqueLibraries: number;
+  };
+  // 新エンジンによる測定（技術階級＝craft、獲得バッジの具体名）
+  skillMeasurement?: {
+    /** craft 階級コード（S0-S7） */
+    craftTier: string;
+    /** craft 階級の日本語ラベル */
+    craftTierLabel: string;
+    /** 獲得したバッジの具体名 */
+    earnedBadges: string[];
   };
 }

@@ -106,68 +106,47 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
         // GitHubデータからスキルのデフォルト値を作成
         const defaultSkills: Array<{ category: string; content: string }> = [];
 
-        // 主要プログラミング言語
+        // 下書きは「網羅性」優先で、検出したものを全部フラットに列挙する。
+        // 細かいカテゴリ分けは編集機能で人間が行う前提（lossyな自動分類はしない）。
+
+        // 言語: GitHub が検出した全言語（pyproject→Python, go.mod→Go… の網羅版）
         if (techData.languages.length > 0) {
           defaultSkills.push({
-            category: '主要プログラミング言語',
-            content: techData.languages
-              .map((lang) => `${lang.name} (${lang.percentage}%)`)
-              .join(', '),
+            category: 'プログラミング言語',
+            content: techData.languages.map((lang) => lang.name).join(', '),
           });
         }
 
-        // ライブラリ分析が利用可能な場合の詳細情報
-        if (techData.libraryAnalysis) {
-          // 言語別の主要ライブラリ
-          techData.libraryAnalysis.languages.forEach((langLib) => {
-            if (langLib.libraries.length > 0) {
-              const topLibs = langLib.libraries.slice(0, 5);
-              defaultSkills.push({
-                category: `${langLib.language}主要ライブラリ`,
-                content: topLibs
-                  .map((lib) => `${lib.name} (${lib.usage}プロジェクトで使用)`)
-                  .join(', '),
-              });
-            }
+        // フレームワーク・ライブラリ・ツール: techStack と全ライブラリをフラットに結合。
+        // 大小文字を無視して重複排除し、言語名や曖昧なエコシステム表記は除く。
+        const langNames = new Set(
+          techData.languages.map((l) => l.name.toLowerCase())
+        );
+        // エコシステムを示すだけの曖昧ラベル（言語行と重複し情報量が薄い）
+        const noiseLabels = new Set(['node.js/npm', 'python (modern)']);
+        const detectedTech = new Map<string, string>(); // 小文字キー -> 表示名
+        const addTech = (item: string) => {
+          const key = item.trim().toLowerCase();
+          if (!key || langNames.has(key) || noiseLabels.has(key)) return;
+          if (!detectedTech.has(key)) detectedTech.set(key, item.trim());
+        };
+        const ts = techData.techStack;
+        [
+          ts.frameworks,
+          ts.devops,
+          ts.testing,
+          ts.databases,
+          ts.infrastructure,
+        ].forEach((set) => set.forEach(addTech));
+        techData.libraryAnalysis?.languages.forEach((langLib) =>
+          langLib.libraries.forEach((lib) => addTech(lib.name))
+        );
+        if (detectedTech.size > 0) {
+          defaultSkills.push({
+            category:
+              'フレームワーク・ライブラリ・ツール（編集で分類してください）',
+            content: Array.from(detectedTech.values()).join(', '),
           });
-
-          // 技術カテゴリ別のスキル
-          const categoryMap: Record<string, string[]> = {};
-          techData.libraryAnalysis.topLibraries.forEach((lib) => {
-            if (!categoryMap[lib.category]) {
-              categoryMap[lib.category] = [];
-            }
-            categoryMap[lib.category].push(lib.name);
-          });
-
-          // カテゴリ別に追加
-          Object.entries(categoryMap).forEach(([category, libs]) => {
-            if (
-              libs.length > 0 &&
-              !defaultSkills.some((skill) => skill.category === category)
-            ) {
-              defaultSkills.push({
-                category,
-                content: libs.slice(0, 10).join(', '),
-              });
-            }
-          });
-        } else {
-          // 従来のフレームワーク・ライブラリ情報
-          if (Array.from(techData.techStack.frameworks).length > 0) {
-            defaultSkills.push({
-              category: 'フレームワーク・ライブラリ',
-              content: Array.from(techData.techStack.frameworks).join(', '),
-            });
-          }
-
-          // 開発・運用ツール
-          if (Array.from(techData.techStack.devops).length > 0) {
-            defaultSkills.push({
-              category: '開発・運用ツール',
-              content: Array.from(techData.techStack.devops).join(', '),
-            });
-          }
         }
 
         // GitHubデータから技術経歴の豊富なデフォルト値を作成
@@ -1296,6 +1275,23 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
                 使用技術・特技・アピールポイントなど
               </div>
               <div className="skills-content">
+                {techData?.skillMeasurement &&
+                  techData.skillMeasurement.earnedBadges.length > 0 && (
+                    <div
+                      className="skill-badges-row"
+                      style={{
+                        marginBottom: '8px',
+                        fontSize: '12px',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <strong>
+                        技術階級 {techData.skillMeasurement.craftTierLabel}（
+                        {techData.skillMeasurement.craftTier}）／達成項目：
+                      </strong>
+                      {techData.skillMeasurement.earnedBadges.join('・')}
+                    </div>
+                  )}
                 {(editableData.customSkills || []).length === 0 &&
                 !isEditing ? (
                   <div

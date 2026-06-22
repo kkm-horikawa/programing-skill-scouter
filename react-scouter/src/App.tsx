@@ -10,9 +10,17 @@ function App() {
     useState<DetailedTechData | null>(null);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
   const [currentUsernames, setCurrentUsernames] = useState<string[]>([]);
+  const [deepMode, setDeepMode] = useState(false);
+  const [orgLogins, setOrgLogins] = useState<string[]>([]);
 
-  const handleScan = (usernames: string[]) => {
+  const handleScan = (
+    usernames: string[],
+    deep: boolean,
+    orgs: string[] = []
+  ) => {
     setCurrentUsernames(usernames);
+    setDeepMode(deep);
+    setOrgLogins(orgs);
     setIsScanning(true);
     setScanData(null);
     setDetailedTechData(null);
@@ -49,6 +57,8 @@ function App() {
       isScanning={isScanning}
       scanData={scanData}
       usernames={currentUsernames}
+      deepMode={deepMode}
+      orgLogins={orgLogins}
       onScanComplete={handleScanComplete}
       onScanError={handleScanError}
       onShowResume={handleShowResume}
