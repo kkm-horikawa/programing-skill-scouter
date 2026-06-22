@@ -45,27 +45,27 @@ export interface RepoEvidence {
   commitSlop?: boolean;
 }
 
-/** アカウント全体の実証痕跡（per-repoでなく本人単位の信号） */
+/**
+ * アカウント全体の実証痕跡（per-repoでなく本人単位の信号）。
+ * 階級(craft)が使うのは hasProfileReadme / hasPublishedLibrary のみ。
+ * 残りは reach（戦闘力の青天井ボーナス、score.ts）の入力。
+ */
 export interface AccountEvidence {
   hasProfileReadme: boolean;
   /** レジストリに公開済みライブラリがある（初級/中級の決定線） */
   hasPublishedLibrary: boolean;
-  /** 自分が所有しないrepoへのmerged PR数 */
-  externalMergedPRs: number;
-  /** 他人のPRをレビューした数 */
-  reviewsGiven: number;
   /** 代表repoの最大star */
   maxStars: number;
   /** フォロワー数 */
   followers: number;
   /** 代表repoの fork 合計 */
   totalForks: number;
-  /** 公開ライブラリの実DL数（取れた場合。未取得は0） */
-  libraryDownloads: number;
-  /** 継続的なOSS貢献 */
-  sustainedContribution: boolean;
-  /** 長期維持された高star flagship */
-  longLivedHighStar: boolean;
+  /** 他人があなたの repo にマージしたPR数（採用の証） */
+  receivedExternalPRs: number;
+  /** あなたが他人の repo にマージしたPR数（OSS貢献） */
+  externalAuthoredPRs: number;
+  /** あなたが他人のPRをレビューした数 */
+  reviewsGiven: number;
 }
 
 export interface SpineResult {

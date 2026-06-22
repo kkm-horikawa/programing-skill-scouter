@@ -47,7 +47,8 @@ describe('reachBonus / reach の青天井加算', () => {
         stars: 0,
         followers: 0,
         forks: 0,
-        externalPRs: 0,
+        receivedExternalPRs: 0,
+        externalAuthoredPRs: 0,
         reviewsGiven: 0,
       })
     ).toBe(0);
@@ -58,14 +59,16 @@ describe('reachBonus / reach の青天井加算', () => {
       stars: 1000,
       followers: 0,
       forks: 0,
-      externalPRs: 0,
+      receivedExternalPRs: 0,
+      externalAuthoredPRs: 0,
       reviewsGiven: 0,
     });
     const b = reachBonus({
       stars: 2000,
       followers: 0,
       forks: 0,
-      externalPRs: 0,
+      receivedExternalPRs: 0,
+      externalAuthoredPRs: 0,
       reviewsGiven: 0,
     });
     expect(b).toBe(a * 2);
@@ -80,7 +83,8 @@ describe('reachBonus / reach の青天井加算', () => {
         stars: 180000,
         followers: 50000,
         forks: 80000,
-        externalPRs: 0,
+        receivedExternalPRs: 0,
+        externalAuthoredPRs: 0,
         reviewsGiven: 0,
       },
     });

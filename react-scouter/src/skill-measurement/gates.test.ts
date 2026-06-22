@@ -30,14 +30,12 @@ function bareAccount(over: Partial<AccountEvidence> = {}): AccountEvidence {
   return {
     hasProfileReadme: false,
     hasPublishedLibrary: false,
-    externalMergedPRs: 0,
-    reviewsGiven: 0,
     maxStars: 0,
     followers: 0,
     totalForks: 0,
-    libraryDownloads: 0,
-    sustainedContribution: false,
-    longLivedHighStar: false,
+    receivedExternalPRs: 0,
+    externalAuthoredPRs: 0,
+    reviewsGiven: 0,
     ...over,
   };
 }

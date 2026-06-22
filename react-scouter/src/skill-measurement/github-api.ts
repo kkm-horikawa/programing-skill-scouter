@@ -33,6 +33,82 @@ export async function fetchFollowerCount(
   return data.followers ?? 0;
 }
 
+/**
+ * GraphQL の contributionsCollection（直近1年）から reach 信号を取得。
+ * - reviewsGiven: 他人のPRをレビューした数（コードを読める証）
+ * - externalAuthoredPRs: 自分が所有しない repo へマージされた自分のPR数（OSS貢献）
+ * トークン必須。失敗・未取得は 0 に倒す。
+ */
+export async function fetchContributionStats(
+  login: string,
+  token: string | null
+): Promise<{ reviewsGiven: number; externalAuthoredPRs: number }> {
+  const empty = { reviewsGiven: 0, externalAuthoredPRs: 0 };
+  if (!token) return empty;
+  const query = `query($login:String!){user(login:$login){contributionsCollection{totalPullRequestReviewContributions pullRequestContributionsByRepository(maxRepositories:100){repository{owner{login}} contributions{totalCount}}}}}`;
+  try {
+    const res = await fetch(`${GITHUB_API}/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `bearer ${token}`,
+      },
+      body: JSON.stringify({ query, variables: { login } }),
+    });
+    if (!res.ok) return empty;
+    const data = (await res.json()) as {
+      data?: {
+        user?: {
+          contributionsCollection?: {
+            totalPullRequestReviewContributions?: number;
+            pullRequestContributionsByRepository?: Array<{
+              repository?: { owner?: { login?: string } };
+              contributions?: { totalCount?: number };
+            }>;
+          };
+        };
+      };
+    };
+    const cc = data.data?.user?.contributionsCollection;
+    if (!cc) return empty;
+    const externalAuthoredPRs = (cc.pullRequestContributionsByRepository ?? [])
+      .filter((e) => {
+        const owner = e.repository?.owner?.login;
+        return owner != null && owner !== login;
+      })
+      .reduce((sum, e) => sum + (e.contributions?.totalCount ?? 0), 0);
+    return {
+      reviewsGiven: cc.totalPullRequestReviewContributions ?? 0,
+      externalAuthoredPRs,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/**
+ * 他人が「あなたの repo」にマージしたPR数を取得（採用の証）。
+ * Search: is:pr is:merged user:{login} -author:{login}。失敗は 0 に倒す。
+ */
+export async function fetchReceivedExternalPRs(
+  login: string,
+  token: string | null
+): Promise<number> {
+  try {
+    const q = encodeURIComponent(
+      `is:pr is:merged user:${login} -author:${login}`
+    );
+    const res = await fetch(`${GITHUB_API}/search/issues?q=${q}&per_page=1`, {
+      headers: authHeaders(token),
+    });
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { total_count?: number };
+    return data.total_count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** 認証ユーザー本人の login を取得（deep モードの対象＝本人）。 */
 export async function fetchAuthenticatedLogin(token: string): Promise<string> {
   const res = await fetch(`${GITHUB_API}/user`, {

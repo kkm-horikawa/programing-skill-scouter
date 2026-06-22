@@ -30,36 +30,43 @@ export interface ReachSignals {
   stars: number;
   followers: number;
   forks: number;
-  /** 自分の repo への外部コントリビュータの merged PR 数 */
-  externalPRs: number;
+  /** 他人があなたの repo にマージしたPR数（採用の証） */
+  receivedExternalPRs: number;
+  /** あなたが他人の repo にマージしたPR数（OSS貢献） */
+  externalAuthoredPRs: number;
   reviewsGiven: number;
 }
 
-/** reach 1単位あたりの戦闘力。star を主役に、外部PRを高く（他人が貢献した証）。 */
-const REACH_WEIGHTS = {
+/**
+ * reach 1単位あたりの戦闘力。
+ * 「他人があなたに貢献した（受領PR）」を最重視、次いで「あなたが外部に貢献」。
+ * star/fork/follower は数が出やすいぶん1単位は小さめ。
+ */
+const REACH_WEIGHTS: Record<keyof ReachSignals, number> = {
+  receivedExternalPRs: 1500,
+  externalAuthoredPRs: 800,
+  reviewsGiven: 200,
   stars: 100,
   forks: 60,
   followers: 40,
-  externalPRs: 1500,
-  reviewsGiven: 200,
-} as const;
+};
 
 const NO_REACH: ReachSignals = {
   stars: 0,
   followers: 0,
   forks: 0,
-  externalPRs: 0,
+  receivedExternalPRs: 0,
+  externalAuthoredPRs: 0,
   reviewsGiven: 0,
 };
 
 /** 採用シグナルから青天井のボーナスを算出する。 */
 export function reachBonus(r: ReachSignals): number {
   return Math.floor(
-    Math.max(0, r.stars) * REACH_WEIGHTS.stars +
-      Math.max(0, r.forks) * REACH_WEIGHTS.forks +
-      Math.max(0, r.followers) * REACH_WEIGHTS.followers +
-      Math.max(0, r.externalPRs) * REACH_WEIGHTS.externalPRs +
-      Math.max(0, r.reviewsGiven) * REACH_WEIGHTS.reviewsGiven
+    (Object.keys(REACH_WEIGHTS) as Array<keyof ReachSignals>).reduce(
+      (sum, key) => sum + Math.max(0, r[key]) * REACH_WEIGHTS[key],
+      0
+    )
   );
 }
 

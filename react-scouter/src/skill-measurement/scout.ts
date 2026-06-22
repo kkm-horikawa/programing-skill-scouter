@@ -9,10 +9,12 @@ import {
 } from './gates';
 import {
   fetchAuthenticatedLogin,
+  fetchContributionStats,
   fetchFileText,
   fetchFollowerCount,
   fetchOwnedRepos,
   fetchPublicRepos,
+  fetchReceivedExternalPRs,
   fetchRecentCommits,
   fetchRepoMeta,
   fetchRepoTree,
@@ -91,7 +93,8 @@ export function assembleScoutResult(
       stars: account.maxStars,
       followers: account.followers,
       forks: account.totalForks,
-      externalPRs: account.externalMergedPRs,
+      receivedExternalPRs: account.receivedExternalPRs,
+      externalAuthoredPRs: account.externalAuthoredPRs,
       reviewsGiven: account.reviewsGiven,
     },
   });
@@ -224,10 +227,18 @@ async function buildAccountEvidence(
   repoData: readonly RepoData[],
   token: string | null
 ): Promise<AccountEvidence> {
-  const [profileReadme, followers, hasPublishedLibrary] = await Promise.all([
+  const [
+    profileReadme,
+    followers,
+    hasPublishedLibrary,
+    contributionStats,
+    receivedExternalPRs,
+  ] = await Promise.all([
     fetchFileText(`${login}/${login}`, 'README.md', token),
     fetchFollowerCount(login, token),
     detectPublishedLibrary(repoData),
+    fetchContributionStats(login, token),
+    fetchReceivedExternalPRs(login, token),
   ]);
   const maxStars = repoData.reduce(
     (max, d) => Math.max(max, d.repo.stargazers_count),
@@ -238,13 +249,11 @@ async function buildAccountEvidence(
   return {
     hasProfileReadme: profileReadme != null,
     hasPublishedLibrary,
-    externalMergedPRs: 0,
-    reviewsGiven: 0,
     maxStars,
     followers,
     totalForks,
-    libraryDownloads: 0,
-    sustainedContribution: false,
-    longLivedHighStar: false,
+    receivedExternalPRs,
+    externalAuthoredPRs: contributionStats.externalAuthoredPRs,
+    reviewsGiven: contributionStats.reviewsGiven,
   };
 }
