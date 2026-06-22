@@ -2295,3 +2295,35 @@ body {
   font-family: 'Orbitron', monospace;
   font-size: 12px;
 }
+
+/* スキャンモード切り替え（公開スカウト / deep 自己診断） */
+.scan-mode-toggle {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 auto 24px;
+  flex-wrap: wrap;
+}
+
+.scan-mode-button {
+  padding: 10px 18px;
+  background: rgba(8, 30, 18, 0.6);
+  border: 1px solid #1f6f3f;
+  border-radius: 6px;
+  color: #8fe3aa;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.scan-mode-button:hover {
+  border-color: #36ff8b;
+}
+
+.scan-mode-button.active {
+  background: #0d8a45;
+  color: #eafff1;
+  border-color: #36ff8b;
+  box-shadow: 0 0 12px rgba(54, 255, 139, 0.4);
+}

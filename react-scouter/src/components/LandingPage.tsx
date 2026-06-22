@@ -2,7 +2,10 @@ import { useState } from 'react';
 import UserInput from './UserInput';
 import ScouterDisplay from './ScouterDisplay';
 import ResumeModal from './ResumeModal';
+import DeepScout from '../skill-measurement/ui/DeepScout';
 import type { DetailedTechData, PowerLevelResult } from '../types/github';
+
+type ScanMode = 'public' | 'deep';
 
 interface LandingPageProps {
   onScan: (usernames: string[]) => void;
@@ -32,6 +35,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   techData,
 }) => {
   const [showScanner, setShowScanner] = useState(false);
+  const [mode, setMode] = useState<ScanMode>('public');
 
   const handleGetStarted = () => {
     setShowScanner(true);
@@ -166,25 +170,43 @@ const LandingPage: React.FC<LandingPageProps> = ({
       >
         <div className="scanner-container">
           <h2 className="section-title">スキル分析を開始</h2>
-          <div className="scanner-content">
-            <div className="scanner-input">
-              <UserInput
-                onScan={onScan}
-                isScanning={isScanning}
-                onShowResume={onShowResume}
-                hasDetailedData={hasDetailedData}
-              />
-            </div>
-            <div className="scanner-display">
-              <ScouterDisplay
-                isScanning={isScanning}
-                scanData={scanData}
-                usernames={usernames}
-                onScanComplete={onScanComplete}
-                onScanError={onScanError}
-              />
-            </div>
+          <div className="scan-mode-toggle">
+            <button
+              className={`scan-mode-button ${mode === 'public' ? 'active' : ''}`}
+              onClick={() => setMode('public')}
+            >
+              公開スカウト（誰でも測定）
+            </button>
+            <button
+              className={`scan-mode-button ${mode === 'deep' ? 'active' : ''}`}
+              onClick={() => setMode('deep')}
+            >
+              deep 自己診断（実力を測定）
+            </button>
           </div>
+          {mode === 'public' ? (
+            <div className="scanner-content">
+              <div className="scanner-input">
+                <UserInput
+                  onScan={onScan}
+                  isScanning={isScanning}
+                  onShowResume={onShowResume}
+                  hasDetailedData={hasDetailedData}
+                />
+              </div>
+              <div className="scanner-display">
+                <ScouterDisplay
+                  isScanning={isScanning}
+                  scanData={scanData}
+                  usernames={usernames}
+                  onScanComplete={onScanComplete}
+                  onScanError={onScanError}
+                />
+              </div>
+            </div>
+          ) : (
+            <DeepScout />
+          )}
         </div>
       </section>
 
