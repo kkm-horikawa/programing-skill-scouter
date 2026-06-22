@@ -12,10 +12,9 @@ import type {
   LanguageStats,
   ProfileReadme,
   Organization,
-  SkillMeasurementSummary,
 } from '../types/github';
 import { scoutPublic } from '../skill-measurement/scout';
-import { summarize } from '../skill-measurement/ui/labels';
+import { TIER_LABELS } from '../skill-measurement/ui/labels';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
@@ -43,8 +42,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     import('../types/github').ContributionDetails | null
   >(null);
   const [showComplete, setShowComplete] = useState(false);
-  const [measurement, setMeasurement] =
-    useState<SkillMeasurementSummary | null>(null);
+  const [rankLabel, setRankLabel] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const animationRef = useRef<number | undefined>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -202,41 +200,17 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         }
       }
 
-      const [
-        profileReadme,
-        organizations,
-        starredRepos,
-        topicAnalysis,
-        libraryData,
-      ] = await Promise.allSettled([
-        fetchProfileReadme(mainUsername),
-        fetchOrganizations(mainUsername),
-        fetchStarredRepositories(mainUsername),
-        analyzeRepositoryTopics(allRepoData),
-        hasToken ? analyzeLibraries(allRepoData) : Promise.resolve(null),
-      ]);
+      const [profileReadme, organizations, libraryData] =
+        await Promise.allSettled([
+          fetchProfileReadme(mainUsername),
+          fetchOrganizations(mainUsername),
+          hasToken ? analyzeLibraries(allRepoData) : Promise.resolve(null),
+        ]);
 
       setProgress(90);
       setLoadingMessage('戦闘力を計算中...');
 
-      // Calculate power level with enhanced data
-      const starredData =
-        starredRepos.status === 'fulfilled'
-          ? starredRepos.value
-          : { totalStarred: 0, categories: {} };
-      const topicsData =
-        topicAnalysis.status === 'fulfilled' ? topicAnalysis.value : {};
-
-      // GitHubトークンがある場合の追加情報
-      let totalLanguageBytes = 0;
-      if (hasToken && languageStats.length > 0) {
-        totalLanguageBytes = languageStats.reduce(
-          (sum, lang) => sum + lang.bytes,
-          0
-        );
-      }
-
-      // 合算データでパワーレベルを計算
+      // 合算データで統計を作成
       const aggregatedUserData = {
         ...mainUserData,
         public_repos: allUsersData.reduce(
@@ -251,29 +225,21 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         ),
       };
 
-      const result = calculatePowerLevel(
-        aggregatedUserData,
-        allRepoData,
-        languageStats,
-        combinedActivityData,
-        starredData,
-        topicsData,
-        totalContributionData,
-        totalLanguageBytes
+      // 戦闘力は新エンジン（規律×採用の二軸）で測る。量ベースの旧スコアは廃止。
+      const token = localStorage.getItem('github_token');
+      const scoutResult = await scoutPublic(mainUserData.login, token);
+      const result: PowerLevelResult = {
+        power: scoutResult.score.power,
+        stats: computeStats(
+          aggregatedUserData,
+          allRepoData,
+          languageStats,
+          combinedActivityData
+        ),
+      };
+      setRankLabel(
+        `${TIER_LABELS[scoutResult.spine.tier]} (${scoutResult.spine.tier})`
       );
-
-      // 新エンジンで内部判定を置き換える（量ではなく規律・採用で測る）。
-      // 失敗時（レート制限等）は旧 calculatePowerLevel の値にフォールバックする。
-      let skillMeasurement: SkillMeasurementSummary | undefined;
-      try {
-        const token = localStorage.getItem('github_token');
-        const scoutResult = await scoutPublic(mainUserData.login, token);
-        skillMeasurement = summarize(scoutResult);
-        result.power = scoutResult.score.power;
-      } catch (e) {
-        console.warn('新エンジンの測定に失敗、旧スコアにフォールバック:', e);
-      }
-      setMeasurement(skillMeasurement ?? null);
       setProgress(100);
       setLoadingMessage('分析完了！');
 
@@ -368,7 +334,6 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           libraryData.status === 'fulfilled' && libraryData.value
             ? libraryData.value
             : undefined,
-        skillMeasurement,
       };
 
       // コントリビューション詳細を保存
@@ -578,328 +543,33 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     }
   };
 
-  const calculatePowerLevel = (
+  const computeStats = (
     userData: ExtendedGitHubUser,
     repoData: GitHubRepo[],
     languageStats: ProcessedLanguage[],
-    activityData: ActivityData,
-    starredData?: { totalStarred: number; categories: Record<string, number> },
-    topicsData?: Record<string, number>,
-    contributionData?: import('../types/github').ContributionDetails | null,
-    totalLanguageBytes?: number
-  ): PowerLevelResult => {
+    activityData: ActivityData
+  ): PowerLevelResult['stats'] => {
     let totalStars = 0;
     let totalForks = 0;
-    let totalWatchers = 0;
     let originalRepos = 0;
-    let repoQualityScore = 0;
-    let languageDiversityScore = 0;
-    let consistencyScore = 0;
-
-    // リポジトリの詳細な分析
     repoData.forEach((repo) => {
       totalStars += repo.stargazers_count;
       totalForks += repo.forks_count;
-      totalWatchers += repo.watchers_count;
-      if (!repo.fork) {
-        originalRepos++;
-
-        // リポジトリ品質スコア計算
-        const repoAge = Math.max(
-          1,
-          (Date.now() - new Date(repo.created_at).getTime()) /
-            (1000 * 60 * 60 * 24 * 365)
-        );
-        const starsPerYear = repo.stargazers_count / repoAge;
-        const forksToStarsRatio =
-          repo.forks_count / Math.max(1, repo.stargazers_count);
-
-        // 高品質なリポジトリ（スター/年が高く、フォーク率も適度）
-        if (
-          starsPerYear > 10 &&
-          forksToStarsRatio > 0.1 &&
-          forksToStarsRatio < 2
-        ) {
-          repoQualityScore += 1000;
-        } else if (starsPerYear > 5) {
-          repoQualityScore += 500;
-        } else if (starsPerYear > 1) {
-          repoQualityScore += 200;
-        }
-
-        // アクティブなメンテナンス（最近更新されている）
-        const lastUpdate = new Date(repo.updated_at);
-        const daysSinceUpdate =
-          (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceUpdate < 30) {
-          repoQualityScore += 300;
-        } else if (daysSinceUpdate < 90) {
-          repoQualityScore += 100;
-        }
-      }
+      if (!repo.fork) originalRepos++;
     });
-
-    // 言語の多様性スコア
-    const uniqueLanguageCount = languageStats.length;
-    if (uniqueLanguageCount >= 5) {
-      languageDiversityScore = 5000;
-    } else if (uniqueLanguageCount >= 3) {
-      languageDiversityScore = 3000;
-    } else if (uniqueLanguageCount >= 2) {
-      languageDiversityScore = 1500;
-    } else if (uniqueLanguageCount >= 1) {
-      languageDiversityScore = 500;
-    }
-
-    // 言語の専門性スコア（トップ言語の習熟度）
-    let languageMasteryScore = 0;
-    if (languageStats.length > 0) {
-      const topLanguagePercentage = languageStats[0].percentage;
-      if (topLanguagePercentage > 80) {
-        languageMasteryScore = 3000; // スペシャリスト
-      } else if (topLanguagePercentage > 60) {
-        languageMasteryScore = 2000;
-      } else if (topLanguagePercentage > 40) {
-        languageMasteryScore = 1000;
-      }
-    }
-
-    // アカウント年齢と活動の一貫性
     const accountAge =
       new Date().getFullYear() - new Date(userData.created_at).getFullYear();
-    const avgReposPerYear = userData.public_repos / Math.max(1, accountAge);
-
-    // 継続的な活動スコア
-    if (avgReposPerYear > 10 && activityData.recentContributions > 30) {
-      consistencyScore = 5000; // 非常にアクティブ
-    } else if (avgReposPerYear > 5 && activityData.recentContributions > 15) {
-      consistencyScore = 3000;
-    } else if (avgReposPerYear > 2 && activityData.recentContributions > 5) {
-      consistencyScore = 1500;
-    } else if (activityData.recentContributions > 0) {
-      consistencyScore = 500;
-    }
-
-    // コラボレーションスコア
-    let collaborationScore = 0;
-    const followerToFollowingRatio =
-      userData.followers / Math.max(1, userData.following);
-    if (followerToFollowingRatio > 2 && userData.followers > 100) {
-      collaborationScore = 5000; // インフルエンサー
-    } else if (followerToFollowingRatio > 1 && userData.followers > 50) {
-      collaborationScore = 3000;
-    } else if (userData.followers > 20) {
-      collaborationScore = 1500;
-    } else if (userData.followers > 5) {
-      collaborationScore = 500;
-    }
-
-    // 活動の質スコア
-    let activityQualityScore = 0;
-    if (activityData.pullRequests > 0) {
-      const prToCommitRatio =
-        activityData.pullRequests / Math.max(1, activityData.commits);
-      if (prToCommitRatio > 0.3) {
-        activityQualityScore += 2000; // 協調的な開発者
-      } else if (prToCommitRatio > 0.1) {
-        activityQualityScore += 1000;
-      }
-    }
-
-    if (activityData.issues > 0) {
-      activityQualityScore += activityData.issues * 100; // イシュー参加
-    }
-
-    // コントリビューション（草）の重み付けを大幅に強化
-    let contributionScore = 0;
-    if (contributionData) {
-      const totalContributions = contributionData.totalContributions;
-      const longestStreak = contributionData.longestStreak;
-      const currentStreak = contributionData.currentStreak;
-
-      // 総コントリビューション数（草の量）による評価
-      if (totalContributions > 1000) {
-        contributionScore += 100000; // 年間1000以上は超活発
-      } else if (totalContributions > 500) {
-        contributionScore += 50000; // 年間500以上は非常に活発
-      } else if (totalContributions > 365) {
-        contributionScore += 30000; // 毎日コミット
-      } else if (totalContributions > 200) {
-        contributionScore += 15000; // 活発
-      } else if (totalContributions > 100) {
-        contributionScore += 8000;
-      } else if (totalContributions > 50) {
-        contributionScore += 4000;
-      }
-
-      // 最長連続記録による評価（継続力）
-      if (longestStreak > 365) {
-        contributionScore += 50000; // 1年以上の連続記録は伝説級
-      } else if (longestStreak > 180) {
-        contributionScore += 30000; // 半年以上
-      } else if (longestStreak > 90) {
-        contributionScore += 20000; // 3ヶ月以上
-      } else if (longestStreak > 30) {
-        contributionScore += 10000; // 1ヶ月以上
-      } else if (longestStreak > 7) {
-        contributionScore += 5000;
-      }
-
-      // 現在の連続記録（現役度）
-      if (currentStreak > 30) {
-        contributionScore += 20000; // 現在も非常にアクティブ
-      } else if (currentStreak > 14) {
-        contributionScore += 10000; // 現在もアクティブ
-      } else if (currentStreak > 7) {
-        contributionScore += 5000;
-      } else if (currentStreak > 0) {
-        contributionScore += 2000;
-      }
-
-      // 最近30日のコントリビューション（現役度の追加評価）
-      if (activityData.recentContributions > 25) {
-        contributionScore += 15000; // ほぼ毎日活動
-      } else if (activityData.recentContributions > 20) {
-        contributionScore += 10000;
-      } else if (activityData.recentContributions > 15) {
-        contributionScore += 7000;
-      } else if (activityData.recentContributions > 10) {
-        contributionScore += 4000;
-      }
-    }
-
-    // エリートスキル判定（特別なボーナス）
-    let eliteBonus = 0;
-    if (totalStars > 10000) eliteBonus += 50000; // スターコレクター
-    if (totalStars > 50000) eliteBonus += 100000; // メガスター
-    if (originalRepos > 100) eliteBonus += 30000; // プロリフィック
-    if (accountAge > 10 && consistencyScore >= 3000) eliteBonus += 20000; // ベテラン
-    if (userData.followers > 1000) eliteBonus += 40000; // インフルエンサー
-    if (userData.followers > 5000) eliteBonus += 80000; // メガインフルエンサー
-
-    // スター済みリポジトリボーナス
-    let starredBonus = 0;
-    if (starredData) {
-      if (starredData.totalStarred > 1000) starredBonus += 10000; // キュレーター
-      if (starredData.totalStarred > 5000) starredBonus += 30000; // スーパーキュレーター
-
-      // 多様な興味（言語カテゴリ数）
-      const starredLanguageCount = Object.keys(starredData.categories).length;
-      if (starredLanguageCount > 10) starredBonus += 15000; // 探求者
-      if (starredLanguageCount > 20) starredBonus += 30000; // オムニボア
-    }
-
-    // トピック専門性ボーナス
-    let topicBonus = 0;
-    if (topicsData) {
-      const topicCount = Object.keys(topicsData).length;
-      if (topicCount > 10) topicBonus += 5000; // トピックエキスパート
-      if (topicCount > 20) topicBonus += 15000; // ドメインマスター
-
-      // 人気トピックのボーナス
-      const popularTopics = [
-        'machine-learning',
-        'artificial-intelligence',
-        'blockchain',
-        'web3',
-        'kubernetes',
-        'docker',
-        'react',
-        'vue',
-        'angular',
-        'typescript',
-      ];
-      const hasPopularTopics = Object.keys(topicsData).some((topic) =>
-        popularTopics.includes(topic.toLowerCase())
-      );
-      if (hasPopularTopics) topicBonus += 10000; // トレンドセッター
-    }
-
-    // 言語実装量ボーナス（総バイト数）
-    let languageVolumeBonus = 0;
-    if (totalLanguageBytes && totalLanguageBytes > 0) {
-      // 総実装量による評価
-      if (totalLanguageBytes > 100000000) {
-        // 100MB以上
-        languageVolumeBonus += 50000;
-      } else if (totalLanguageBytes > 50000000) {
-        // 50MB以上
-        languageVolumeBonus += 30000;
-      } else if (totalLanguageBytes > 10000000) {
-        // 10MB以上
-        languageVolumeBonus += 20000;
-      } else if (totalLanguageBytes > 5000000) {
-        // 5MB以上
-        languageVolumeBonus += 10000;
-      } else if (totalLanguageBytes > 1000000) {
-        // 1MB以上
-        languageVolumeBonus += 5000;
-      }
-
-      // 実装量と言語多様性の組み合わせボーナス
-      if (totalLanguageBytes > 10000000 && languageStats.length >= 3) {
-        languageVolumeBonus += 15000; // 大規模かつ多言語
-      }
-    }
-
-    // 総合戦闘力計算（新しい重み付け）
-    const basePower =
-      // 基本ステータス
-      userData.public_repos * 150 +
-      originalRepos * 300 +
-      totalStars * 100 +
-      userData.followers * 50 +
-      userData.following * 10 +
-      totalForks * 80 +
-      totalWatchers * 40 +
-      // 活動メトリクス（重み増加）
-      // コミット数はcontributionDataから取得した方が正確
-      (contributionData && contributionData.totalContributions > 0
-        ? contributionData.totalContributions * 50
-        : activityData.commits * 20) +
-      activityData.pullRequests * 200 +
-      activityData.issues * 100 +
-      activityData.recentContributions * 50 +
-      userData.public_gists * 100 +
-      // プロフィール完成度
-      (userData.bio ? 1000 : 0) +
-      (userData.blog ? 1000 : 0) +
-      (userData.company ? 2000 : 0) +
-      (userData.location ? 500 : 0) +
-      (userData.hireable ? 3000 : 0) +
-      (userData.twitter_username ? 1500 : 0) +
-      // 経験値
-      accountAge * 2000 +
-      // 品質スコア
-      repoQualityScore +
-      languageDiversityScore +
-      languageMasteryScore +
-      consistencyScore +
-      collaborationScore +
-      activityQualityScore +
-      contributionScore +
-      eliteBonus +
-      starredBonus +
-      topicBonus +
-      languageVolumeBonus;
-
-    // レベル調整（より高い戦闘力を実現）
-    const adjustedPower = basePower * 1.5;
-
     return {
-      power: Math.floor(adjustedPower),
-      stats: {
-        repos: userData.public_repos,
-        originalRepos,
-        stars: totalStars,
-        forks: totalForks,
-        followers: userData.followers,
-        following: userData.following,
-        accountAge,
-        languages: languageStats,
-        activity: activityData,
-        gists: userData.public_gists,
-      },
+      repos: userData.public_repos,
+      originalRepos,
+      stars: totalStars,
+      forks: totalForks,
+      followers: userData.followers,
+      following: userData.following,
+      accountAge,
+      languages: languageStats,
+      activity: activityData,
+      gists: userData.public_gists,
     };
   };
 
@@ -1257,10 +927,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         {displayStats && (
           <>
             <text x="5%" y="52%" className="rank scouter-text">
-              RANK:{' '}
-              {measurement
-                ? `${measurement.tierLabel} (${measurement.tier})`
-                : determineRank(displayStats.power)}
+              RANK: {rankLabel ?? determineRank(displayStats.power)}
             </text>
 
             <g className="stats-group">
@@ -1918,101 +1585,6 @@ const fetchAllRepositories = async (
   }
 };
 
-const fetchStarredRepositories = async (
-  username: string
-): Promise<{ totalStarred: number; categories: Record<string, number> }> => {
-  try {
-    const token = localStorage.getItem('github_token');
-    const headers: Record<string, string> = {};
-    if (token) {
-      if (token.startsWith('github_pat_')) {
-        headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        headers['Authorization'] = `token ${token}`;
-      }
-    }
-
-    const response = await fetch(
-      `https://api.github.com/users/${username}/starred?per_page=100`,
-      {
-        headers,
-      }
-    );
-
-    if (!response.ok) {
-      console.warn('Failed to fetch starred repositories');
-      return { totalStarred: 0, categories: {} };
-    }
-
-    const starredRepos = await response.json();
-    const categories: Record<string, number> = {};
-
-    // カテゴリ別に分類
-    starredRepos.forEach((repo: GitHubRepo) => {
-      if (repo.language) {
-        categories[repo.language] = (categories[repo.language] || 0) + 1;
-      }
-    });
-
-    return {
-      totalStarred: starredRepos.length,
-      categories,
-    };
-  } catch (error) {
-    console.warn('Failed to analyze starred repositories:', error);
-    return { totalStarred: 0, categories: {} };
-  }
-};
-
-const analyzeRepositoryTopics = async (
-  repos: GitHubRepo[]
-): Promise<Record<string, number>> => {
-  try {
-    const token = localStorage.getItem('github_token');
-    const headers: Record<string, string> = {
-      Accept: 'application/vnd.github.mercy-preview+json', // トピックAPIのプレビューヘッダー
-    };
-    if (token) {
-      if (token.startsWith('github_pat_')) {
-        headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        headers['Authorization'] = `token ${token}`;
-      }
-    }
-
-    const topics: Record<string, number> = {};
-    const topRepos = repos.slice(0, 20); // トップ20リポジトリのトピックを分析
-
-    for (const repo of topRepos) {
-      try {
-        const response = await fetch(
-          `https://api.github.com/repos/${repo.full_name}/topics`,
-          {
-            headers,
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.names) {
-            data.names.forEach((topic: string) => {
-              topics[topic] = (topics[topic] || 0) + 1;
-            });
-          }
-        }
-      } catch {
-        console.warn(`Failed to fetch topics for ${repo.full_name}`);
-      }
-    }
-
-    return topics;
-  } catch (error) {
-    console.warn('Failed to analyze repository topics:', error);
-    return {};
-  }
-};
-
-// ライブラリカテゴリ定義
 const LIBRARY_CATEGORIES: Record<string, string[]> = {
   // JavaScript/TypeScript
   'UI Framework': [

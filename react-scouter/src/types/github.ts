@@ -188,33 +188,6 @@ export interface DetailedRepo extends GitHubRepo {
   };
 }
 
-// 新エンジンによるスキル測定サマリ（履歴書・SVGに載せる）
-export interface SkillMeasurementSummary {
-  /** 階級コード（S0-S7） */
-  tier: string;
-  /** 階級の日本語ラベル */
-  tierLabel: string;
-  /** 規律軸の到達段 */
-  craftTier: string;
-  /** 採用軸の到達段 */
-  reachTier: string;
-  /** 帯内ランクまで反映した戦闘力 */
-  power: number;
-  /** ゲートのチェックリスト */
-  gates: {
-    tier: string;
-    label: string;
-    requirement: string;
-    cleared: boolean;
-  }[];
-  /** バッジグループ別の獲得状況 */
-  badgeGroups: { label: string; earned: number; total: number }[];
-  earnedBadgeCount: number;
-  /** 次の階級に必要なこと（全段通過なら null） */
-  nextRequirement: string | null;
-  cappedBy?: string;
-}
-
 // 拡張されたユーザー情報
 export interface ExtendedGitHubUser extends GitHubUser {
   twitter_username: string | null;
@@ -311,6 +284,4 @@ export interface DetailedTechData {
     topLibraries: LibraryInfo[]; // 全言語での上位ライブラリ
     totalUniqueLibraries: number;
   };
-  // 新エンジンによるスキル測定（量ではなく規律・採用で測る）
-  skillMeasurement?: SkillMeasurementSummary;
 }

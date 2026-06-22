@@ -1290,60 +1290,6 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
               </div>
             </div>
 
-            {/* スキル測定セクション（新エンジン：量ではなく規律と採用で評価） */}
-            {techData?.skillMeasurement && (
-              <div className="skill-measurement-section">
-                <div className="section-header">
-                  スキル測定（規律と採用で評価）
-                </div>
-                <div
-                  className="skill-measurement-content"
-                  style={{ padding: '8px 12px', fontSize: '13px' }}
-                >
-                  <div style={{ marginBottom: '6px' }}>
-                    階級 <strong>{techData.skillMeasurement.tierLabel}</strong>
-                    （{techData.skillMeasurement.tier}） ／ 戦闘力{' '}
-                    {techData.skillMeasurement.power.toLocaleString()}
-                    <span style={{ color: '#666', marginLeft: '8px' }}>
-                      規律 {techData.skillMeasurement.craftTier} ・ 採用{' '}
-                      {techData.skillMeasurement.reachTier}
-                    </span>
-                  </div>
-                  <div style={{ marginBottom: '6px' }}>
-                    <div style={{ fontWeight: 'bold' }}>達成したゲート</div>
-                    <ul style={{ margin: '2px 0', paddingLeft: '18px' }}>
-                      {techData.skillMeasurement.gates
-                        .filter((g) => g.cleared)
-                        .map((g) => (
-                          <li key={g.tier}>
-                            {g.label}（{g.tier}）：{g.requirement}
-                          </li>
-                        ))}
-                    </ul>
-                    {techData.skillMeasurement.nextRequirement && (
-                      <div style={{ color: '#a06000' }}>
-                        次の階級へ：
-                        {techData.skillMeasurement.nextRequirement}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 'bold' }}>
-                      バッジ獲得（{techData.skillMeasurement.earnedBadgeCount}
-                      個）
-                    </div>
-                    <ul style={{ margin: '2px 0', paddingLeft: '18px' }}>
-                      {techData.skillMeasurement.badgeGroups.map((b) => (
-                        <li key={b.label}>
-                          {b.label}：{b.earned}/{b.total}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* 使用技術・特技・アピールポイント等セクション */}
             <div className="skills-section">
               <div className="section-header">
