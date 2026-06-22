@@ -176,7 +176,6 @@ const TOOL_BY_DIRNAME: Record<string, string> = {
   kubernetes: 'Kubernetes',
   helm: 'Helm',
   charts: 'Helm',
-  manifests: 'Kubernetes',
   ansible: 'Ansible',
   '.husky': 'husky',
   '.githooks': 'Git hooks',

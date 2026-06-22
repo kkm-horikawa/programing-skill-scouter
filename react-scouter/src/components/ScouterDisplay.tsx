@@ -17,6 +17,7 @@ import { scoutPublic } from '../skill-measurement/scout';
 import { earnedBadgeLabels } from '../skill-measurement/badges';
 import { TIER_LABELS } from '../skill-measurement/ui/labels';
 import { detectTool } from '../skill-measurement/tooling-detect';
+import { fetchRepoTree } from '../skill-measurement/github-api';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
@@ -455,67 +456,73 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       infrastructure: new Set(),
     };
 
-    const topRepos = repos.slice(0, 50);
+    // fork は他人のプロジェクト＝本人の技術ではないので除外する
+    const topRepos = repos.filter((r) => !r.fork).slice(0, 50);
+
+    // 依存・生成物の中の設定は本人の技術ではないので除外する
+    const VENDORED =
+      /(^|\/)(node_modules|vendor|\.venv|venv|site-packages|dist|build|out|\.next|target|third_party|\.git|bower_components)\//;
+    const token = localStorage.getItem('github_token');
 
     for (const repo of topRepos) {
       try {
-        const headers = getHeaders();
-        const contentsResponse = await fetch(
-          `https://api.github.com/repos/${repo.full_name}/contents`,
-          { headers }
+        // root だけでなくネスト（infra/terraform, deploy/k8s 等）も拾うため再帰ツリーを見る
+        const tree = await fetchRepoTree(
+          repo.full_name,
+          repo.default_branch || 'main',
+          token
         );
 
-        if (contentsResponse.ok) {
-          const contents: Array<{ name: string; type: string }> =
-            await contentsResponse.json();
+        let hasRootPackageJson = false;
+        for (const entry of tree.entries) {
+          const path = entry.path;
+          if (VENDORED.test(path)) continue;
+          const base = path.slice(path.lastIndexOf('/') + 1);
+          const fileName = base.toLowerCase();
 
-          for (const item of contents) {
-            const fileName = item.name.toLowerCase();
-
-            if (fileName === 'package.json') {
-              techStack.frameworks.add('Node.js/npm');
-              await analyzePackageJson(repo.full_name, techStack);
-            } else if (
-              fileName === 'requirements.txt' ||
-              fileName === 'pipfile'
-            ) {
-              techStack.frameworks.add('Python');
-            } else if (fileName === 'pyproject.toml') {
-              techStack.frameworks.add('Python (Modern)');
-            } else if (fileName === 'composer.json') {
-              techStack.frameworks.add('PHP/Composer');
-            } else if (fileName === 'pom.xml') {
-              techStack.frameworks.add('Java/Maven');
-            } else if (fileName === 'build.gradle') {
-              techStack.frameworks.add('Java/Gradle');
-            } else if (fileName === 'cargo.toml') {
-              techStack.frameworks.add('Rust');
-            } else if (fileName === 'go.mod') {
-              techStack.frameworks.add('Go');
-            } else if (fileName === 'gemfile') {
-              techStack.frameworks.add('Ruby');
-            }
-
-            if (fileName === 'dockerfile' || fileName.includes('docker')) {
-              techStack.devops.add('Docker');
-            }
-
-            if (fileName.endsWith('.yml') || fileName.endsWith('.yaml')) {
-              if (fileName.includes('github')) {
-                techStack.devops.add('GitHub Actions');
-              } else if (fileName.includes('gitlab')) {
-                techStack.devops.add('GitLab CI');
-              } else if (fileName.includes('circle')) {
-                techStack.devops.add('CircleCI');
-              }
-            }
-
-            // 多エコシステム横断でインフラ/ビルド/開発ツールを検出（依存に出ない分）
-            const tool = detectTool(item.name, item.type);
-            if (tool) {
-              techStack.infrastructure.add(tool);
-            }
+          // 言語/フレームワークをマニフェストの存在から（ネスト含むどこでも）
+          if (fileName === 'package.json') {
+            techStack.frameworks.add('Node.js/npm');
+            if (!path.includes('/')) hasRootPackageJson = true;
+          } else if (
+            fileName === 'requirements.txt' ||
+            fileName === 'pipfile'
+          ) {
+            techStack.frameworks.add('Python');
+          } else if (fileName === 'pyproject.toml') {
+            techStack.frameworks.add('Python (Modern)');
+          } else if (fileName === 'composer.json') {
+            techStack.frameworks.add('PHP/Composer');
+          } else if (fileName === 'pom.xml') {
+            techStack.frameworks.add('Java/Maven');
+          } else if (
+            fileName === 'build.gradle' ||
+            fileName === 'build.gradle.kts'
+          ) {
+            techStack.frameworks.add('Java/Gradle');
+          } else if (fileName === 'cargo.toml') {
+            techStack.frameworks.add('Rust');
+          } else if (fileName === 'go.mod') {
+            techStack.frameworks.add('Go');
+          } else if (fileName === 'gemfile') {
+            techStack.frameworks.add('Ruby');
           }
+
+          if (fileName === 'dockerfile' || /\.dockerfile$/.test(fileName)) {
+            techStack.devops.add('Docker');
+          }
+          if (/(^|\/)\.github\/workflows\//.test(path)) {
+            techStack.devops.add('GitHub Actions');
+          }
+
+          // 多エコシステム横断でインフラ/ビルド/開発ツールを検出（ネスト対応）
+          const kind = entry.type === 'tree' ? 'dir' : 'file';
+          const tool = detectTool(base, kind);
+          if (tool) techStack.infrastructure.add(tool);
+        }
+
+        if (hasRootPackageJson) {
+          await analyzePackageJson(repo.full_name, techStack);
         }
       } catch (e) {
         console.error('Tech stack analysis error:', e);
@@ -1796,8 +1803,8 @@ const analyzeLibraries = async (
       { category: string; usage: number; versions: Set<string> }
     > = {};
 
-    // 履歴書の下書きは網羅性優先。多めのリポジトリから依存を集める。
-    const reposToAnalyze = repos.slice(0, 50);
+    // 履歴書の下書きは網羅性優先。fork（他人のプロジェクト）は除き、多めのrepoから集める。
+    const reposToAnalyze = repos.filter((r) => !r.fork).slice(0, 50);
 
     for (const repo of reposToAnalyze) {
       try {
