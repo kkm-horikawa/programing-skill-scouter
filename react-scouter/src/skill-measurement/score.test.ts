@@ -47,7 +47,6 @@ describe('reachBonus / reach の青天井加算', () => {
         stars: 0,
         followers: 0,
         forks: 0,
-        receivedExternalPRs: 0,
         externalAuthoredPRs: 0,
         reviewsGiven: 0,
       })
@@ -59,7 +58,6 @@ describe('reachBonus / reach の青天井加算', () => {
       stars: 1000,
       followers: 0,
       forks: 0,
-      receivedExternalPRs: 0,
       externalAuthoredPRs: 0,
       reviewsGiven: 0,
     });
@@ -67,7 +65,6 @@ describe('reachBonus / reach の青天井加算', () => {
       stars: 2000,
       followers: 0,
       forks: 0,
-      receivedExternalPRs: 0,
       externalAuthoredPRs: 0,
       reviewsGiven: 0,
     });
@@ -83,7 +80,6 @@ describe('reachBonus / reach の青天井加算', () => {
         stars: 180000,
         followers: 50000,
         forks: 80000,
-        receivedExternalPRs: 0,
         externalAuthoredPRs: 0,
         reviewsGiven: 0,
       },

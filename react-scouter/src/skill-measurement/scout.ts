@@ -14,7 +14,6 @@ import {
   fetchFollowerCount,
   fetchOwnedRepos,
   fetchPublicRepos,
-  fetchReceivedExternalPRs,
   fetchRecentCommits,
   fetchRepoMeta,
   fetchRepoTree,
@@ -93,7 +92,6 @@ export function assembleScoutResult(
       stars: account.maxStars,
       followers: account.followers,
       forks: account.totalForks,
-      receivedExternalPRs: account.receivedExternalPRs,
       externalAuthoredPRs: account.externalAuthoredPRs,
       reviewsGiven: account.reviewsGiven,
     },
@@ -227,19 +225,13 @@ async function buildAccountEvidence(
   repoData: readonly RepoData[],
   token: string | null
 ): Promise<AccountEvidence> {
-  const [
-    profileReadme,
-    followers,
-    hasPublishedLibrary,
-    contributionStats,
-    receivedExternalPRs,
-  ] = await Promise.all([
-    fetchFileText(`${login}/${login}`, 'README.md', token),
-    fetchFollowerCount(login, token),
-    detectPublishedLibrary(repoData),
-    fetchContributionStats(login, token),
-    fetchReceivedExternalPRs(login, token),
-  ]);
+  const [profileReadme, followers, hasPublishedLibrary, contributionStats] =
+    await Promise.all([
+      fetchFileText(`${login}/${login}`, 'README.md', token),
+      fetchFollowerCount(login, token),
+      detectPublishedLibrary(repoData),
+      fetchContributionStats(login, token),
+    ]);
   const maxStars = repoData.reduce(
     (max, d) => Math.max(max, d.repo.stargazers_count),
     0
@@ -252,7 +244,6 @@ async function buildAccountEvidence(
     maxStars,
     followers,
     totalForks,
-    receivedExternalPRs,
     externalAuthoredPRs: contributionStats.externalAuthoredPRs,
     reviewsGiven: contributionStats.reviewsGiven,
   };

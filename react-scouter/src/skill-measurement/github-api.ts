@@ -86,29 +86,6 @@ export async function fetchContributionStats(
   }
 }
 
-/**
- * 他人が「あなたの repo」にマージしたPR数を取得（採用の証）。
- * Search: is:pr is:merged user:{login} -author:{login}。失敗は 0 に倒す。
- */
-export async function fetchReceivedExternalPRs(
-  login: string,
-  token: string | null
-): Promise<number> {
-  try {
-    const q = encodeURIComponent(
-      `is:pr is:merged user:${login} -author:${login}`
-    );
-    const res = await fetch(`${GITHUB_API}/search/issues?q=${q}&per_page=1`, {
-      headers: authHeaders(token),
-    });
-    if (!res.ok) return 0;
-    const data = (await res.json()) as { total_count?: number };
-    return data.total_count ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
 /** 認証ユーザー本人の login を取得（deep モードの対象＝本人）。 */
 export async function fetchAuthenticatedLogin(token: string): Promise<string> {
   const res = await fetch(`${GITHUB_API}/user`, {

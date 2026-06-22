@@ -5,7 +5,6 @@ import {
   fetchContributionStats,
   fetchFileText,
   fetchOwnedRepos,
-  fetchReceivedExternalPRs,
   fetchRecentCommits,
   fetchRepoTree,
 } from './github-api';
@@ -213,19 +212,5 @@ describe('fetchContributionStats', () => {
       reviewsGiven: 0,
       externalAuthoredPRs: 0,
     });
-  });
-});
-
-describe('fetchReceivedExternalPRs', () => {
-  it('Search の total_count を返す', async () => {
-    const fn = mockFetch(() => ({ ok: true, body: { total_count: 47 } }));
-    const count = await fetchReceivedExternalPRs('octocat', 'ghp_x');
-    expect(count).toBe(47);
-    expect(fn.mock.calls[0][0]).toContain('/search/issues');
-  });
-
-  it('非 OK なら 0', async () => {
-    mockFetch(() => ({ ok: false, status: 403, body: {} }));
-    expect(await fetchReceivedExternalPRs('octocat', null)).toBe(0);
   });
 });

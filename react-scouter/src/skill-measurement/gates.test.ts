@@ -33,7 +33,6 @@ function bareAccount(over: Partial<AccountEvidence> = {}): AccountEvidence {
     maxStars: 0,
     followers: 0,
     totalForks: 0,
-    receivedExternalPRs: 0,
     externalAuthoredPRs: 0,
     reviewsGiven: 0,
     ...over,

@@ -30,20 +30,20 @@ export interface ReachSignals {
   stars: number;
   followers: number;
   forks: number;
-  /** 他人があなたの repo にマージしたPR数（採用の証） */
-  receivedExternalPRs: number;
-  /** あなたが他人の repo にマージしたPR数（OSS貢献） */
+  /** あなたが他人の repo にマージされたPR数（OSS貢献。他人の審査を通した証） */
   externalAuthoredPRs: number;
   reviewsGiven: number;
 }
 
 /**
  * reach 1単位あたりの戦闘力。
- * 「他人があなたに貢献した（受領PR）」を最重視、次いで「あなたが外部に貢献」。
- * star/fork/follower は数が出やすいぶん1単位は小さめ。
+ * 「他人の審査を通した貢献（外部PR）」を最重視。star/fork/follower は
+ * 数が出やすいぶん1単位は小さめ。
+ *
+ * NOTE: 「自分のrepoが受けたPR」は意図的に含めない。所有者/立場の指標であり、
+ * 無レビューマージ（スロップ量産）を高評価してしまうため。
  */
 const REACH_WEIGHTS: Record<keyof ReachSignals, number> = {
-  receivedExternalPRs: 1500,
   externalAuthoredPRs: 800,
   reviewsGiven: 200,
   stars: 100,
@@ -55,7 +55,6 @@ const NO_REACH: ReachSignals = {
   stars: 0,
   followers: 0,
   forks: 0,
-  receivedExternalPRs: 0,
   externalAuthoredPRs: 0,
   reviewsGiven: 0,
 };
