@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { authHeaders, fetchOwnedRepos, fetchRepoTree } from './github-api';
+import {
+  authHeaders,
+  fetchCommitStats,
+  fetchFileText,
+  fetchOwnedRepos,
+  fetchRecentCommits,
+  fetchRepoTree,
+} from './github-api';
 
 /** I/O 境界（fetch）だけをモックする。GitHub の実レスポンス形に沿った fixture を返す。 */
 function mockFetch(
@@ -92,5 +99,68 @@ describe('fetchOwnedRepos', () => {
   it('非 OK レスポンスで例外を投げる', async () => {
     mockFetch(() => ({ ok: false, status: 401, body: {} }));
     await expect(fetchOwnedRepos('ghp_bad')).rejects.toThrow(/401/);
+  });
+});
+
+describe('fetchRecentCommits', () => {
+  it('コミットメッセージを抽出する', async () => {
+    mockFetch(() => ({
+      ok: true,
+      body: [
+        { sha: 'a', commit: { message: 'feat: x' } },
+        { sha: 'b', commit: { message: 'fix: y' } },
+      ],
+    }));
+    const commits = await fetchRecentCommits('octocat/repo', 'ghp_x');
+    expect(commits).toEqual([{ message: 'feat: x' }, { message: 'fix: y' }]);
+  });
+
+  it('非 OK で例外を投げる', async () => {
+    mockFetch(() => ({ ok: false, status: 409, body: {} }));
+    await expect(fetchRecentCommits('octocat/empty', null)).rejects.toThrow(
+      /409/
+    );
+  });
+});
+
+describe('fetchCommitStats', () => {
+  it('追加/削除行を取り出す', async () => {
+    mockFetch(() => ({
+      ok: true,
+      body: { stats: { additions: 120, deletions: 30 } },
+    }));
+    const stats = await fetchCommitStats('octocat/repo', 'abc', 'ghp_x');
+    expect(stats).toEqual({ additions: 120, deletions: 30 });
+  });
+
+  it('stats 欠落時は 0 を返す', async () => {
+    mockFetch(() => ({ ok: true, body: {} }));
+    const stats = await fetchCommitStats('octocat/repo', 'abc', null);
+    expect(stats).toEqual({ additions: 0, deletions: 0 });
+  });
+});
+
+describe('fetchFileText', () => {
+  it('base64 の中身をデコードして返す', async () => {
+    const content = '{ "compilerOptions": { "strict": true } }';
+    mockFetch(() => ({
+      ok: true,
+      body: { encoding: 'base64', content: btoa(content) },
+    }));
+    const text = await fetchFileText('octocat/repo', 'tsconfig.json', 'ghp_x');
+    expect(text).toBe(content);
+  });
+
+  it('404 は null を返す（存在しないだけは例外にしない）', async () => {
+    mockFetch(() => ({ ok: false, status: 404, body: {} }));
+    const text = await fetchFileText('octocat/repo', 'mypy.ini', null);
+    expect(text).toBeNull();
+  });
+
+  it('404 以外の非 OK は例外を投げる', async () => {
+    mockFetch(() => ({ ok: false, status: 500, body: {} }));
+    await expect(
+      fetchFileText('octocat/repo', 'tsconfig.json', null)
+    ).rejects.toThrow(/500/);
   });
 });

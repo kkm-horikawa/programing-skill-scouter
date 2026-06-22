@@ -1,4 +1,5 @@
 import type { GitHubRepo } from '../types/github';
+import type { CommitSummary } from './heuristics';
 import type { RepoTree, RepoTreeEntry } from './types';
 
 const GITHUB_API = 'https://api.github.com';
@@ -78,5 +79,82 @@ export async function fetchRepoTree(
     branch,
     entries,
     truncated: Boolean(data.truncated),
+  };
+}
+
+/**
+ * 直近コミットのメッセージ列を取得（H-b のメッセージ品質・cadence 用）。
+ * commits 一覧 API は per-commit の追加/削除行（stats）を含まないので、
+ * 粒度・削除率を測りたい場合は別途 fetchCommitStats を併用する。
+ */
+export async function fetchRecentCommits(
+  fullName: string,
+  token: string | null,
+  max = 100
+): Promise<CommitSummary[]> {
+  const perPage = Math.min(max, PER_PAGE);
+  const res = await fetch(
+    `${GITHUB_API}/repos/${fullName}/commits?per_page=${perPage}`,
+    { headers: authHeaders(token) }
+  );
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch commits for ${fullName}: ${res.status} ${res.statusText}`
+    );
+  }
+  const data = (await res.json()) as Array<{
+    commit?: { message?: string };
+  }>;
+  return data.map((c) => ({ message: c.commit?.message ?? '' }));
+}
+
+/**
+ * ファイルの中身をテキストで取得（H-c 設定厳密さ用）。
+ * 存在しなければ null。tsconfig.json など少数の key config だけに使う。
+ */
+export async function fetchFileText(
+  fullName: string,
+  path: string,
+  token: string | null
+): Promise<string | null> {
+  const res = await fetch(`${GITHUB_API}/repos/${fullName}/contents/${path}`, {
+    headers: authHeaders(token),
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch ${path} of ${fullName}: ${res.status} ${res.statusText}`
+    );
+  }
+  const data = (await res.json()) as { content?: string; encoding?: string };
+  if (data.encoding === 'base64' && typeof data.content === 'string') {
+    return atob(data.content.replace(/\n/g, ''));
+  }
+  return null;
+}
+
+/**
+ * 1コミットの追加/削除行を取得（H-b の粒度・削除率用）。
+ * 1コミット1コールと高コストなので、代表repoの直近少数だけサンプリングして使う。
+ */
+export async function fetchCommitStats(
+  fullName: string,
+  sha: string,
+  token: string | null
+): Promise<{ additions: number; deletions: number }> {
+  const res = await fetch(`${GITHUB_API}/repos/${fullName}/commits/${sha}`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch commit ${sha} of ${fullName}: ${res.status} ${res.statusText}`
+    );
+  }
+  const data = (await res.json()) as {
+    stats?: { additions?: number; deletions?: number };
+  };
+  return {
+    additions: data.stats?.additions ?? 0,
+    deletions: data.stats?.deletions ?? 0,
   };
 }
