@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BadgeGroup } from '../badges/types';
-import { scoutDeep, type ScoutResult } from '../scout';
+import { scoutDeep, scoutPublic, type ScoutResult } from '../scout';
 import {
   gateChecklist,
   GROUP_LABELS,
@@ -15,10 +15,13 @@ const TOKEN_SCOPE_URL =
   'https://github.com/settings/tokens/new?scopes=repo&description=Programmer%20Scouter%20deep';
 
 /**
- * deep 自己診断パネル。本人のトークンで private 含む代表作を測り、
- * 量ではなく規律・作り込みで戦闘力と階級を出す。公開スカウトとは別モード。
+ * 新エンジンの測定パネル。量ではなく設計の規律と作り込みで戦闘力と階級を出す。
+ *
+ * - ユーザー名を入れると、その人の公開リポジトリを測る（他者比較＝旧スカウターの置換）
+ * - 空欄なら自分自身を private 込みで測る（repo スコープのトークンが必要）
  */
 export default function DeepScout() {
+  const [username, setUsername] = useState('');
   const [token, setToken] = useState(
     () => localStorage.getItem('github_token') ?? ''
   );
@@ -26,10 +29,14 @@ export default function DeepScout() {
   const [result, setResult] = useState<ScoutResult | null>(null);
   const [error, setError] = useState('');
 
+  const target = username.trim();
+  const tokenValue = token.trim();
+
   const runScan = async () => {
-    const value = token.trim();
-    if (!value) {
-      setError('repo スコープのトークンが必要です');
+    if (!target && !tokenValue) {
+      setError(
+        '自分を測るには repo スコープのトークンが必要です（他者ならユーザー名を入力）'
+      );
       setStatus('error');
       return;
     }
@@ -37,8 +44,11 @@ export default function DeepScout() {
     setError('');
     setResult(null);
     try {
-      localStorage.setItem('github_token', value);
-      setResult(await scoutDeep(value));
+      if (tokenValue) localStorage.setItem('github_token', tokenValue);
+      const scan = target
+        ? scoutPublic(target, tokenValue || null)
+        : scoutDeep(tokenValue);
+      setResult(await scan);
       setStatus('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : '測定に失敗しました');
@@ -49,11 +59,14 @@ export default function DeepScout() {
   return (
     <div className="ds-root">
       <div className="ds-intro">
-        <h3 className="ds-title">deep 自己診断</h3>
+        <h3 className="ds-title">新エンジン測定（実力）</h3>
         <p className="ds-desc">
-          あなたの <strong>private を含む代表作</strong>{' '}
-          を読み、コミット数ではなく設計の規律と作り込みで実力を測ります。
-          本人のトークンが要るので、測れるのは自分自身だけです。
+          コミット数や star ではなく、<strong>設計の規律と作り込み</strong>{' '}
+          で実力を測ります。
+          <br />
+          ユーザー名を入れるとその人の<strong>公開リポジトリ</strong>
+          を測定（他者比較）。空欄なら自分を <strong>private 込み</strong>
+          で測定します。
         </p>
         <a
           className="ds-tokenlink"
@@ -68,8 +81,15 @@ export default function DeepScout() {
       <div className="ds-controls">
         <input
           className="ds-token"
+          type="text"
+          placeholder="ユーザー名（空欄なら自分・private込み）"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          className="ds-token"
           type="password"
-          placeholder="ghp_... または github_pat_..."
+          placeholder="トークン（自分は必須／他者は任意）"
           value={token}
           onChange={(e) => setToken(e.target.value)}
         />
@@ -78,7 +98,7 @@ export default function DeepScout() {
           onClick={runScan}
           disabled={status === 'scanning'}
         >
-          {status === 'scanning' ? '測定中…' : '自己診断する'}
+          {status === 'scanning' ? '測定中…' : '測定する'}
         </button>
       </div>
 

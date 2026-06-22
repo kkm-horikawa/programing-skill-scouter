@@ -35,7 +35,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   techData,
 }) => {
   const [showScanner, setShowScanner] = useState(false);
-  const [mode, setMode] = useState<ScanMode>('public');
+  const [mode, setMode] = useState<ScanMode>('deep');
 
   const handleGetStarted = () => {
     setShowScanner(true);
@@ -172,16 +172,16 @@ const LandingPage: React.FC<LandingPageProps> = ({
           <h2 className="section-title">スキル分析を開始</h2>
           <div className="scan-mode-toggle">
             <button
-              className={`scan-mode-button ${mode === 'public' ? 'active' : ''}`}
-              onClick={() => setMode('public')}
-            >
-              公開スカウト（誰でも測定）
-            </button>
-            <button
               className={`scan-mode-button ${mode === 'deep' ? 'active' : ''}`}
               onClick={() => setMode('deep')}
             >
-              deep 自己診断（実力を測定）
+              新エンジン測定（実力）
+            </button>
+            <button
+              className={`scan-mode-button ${mode === 'public' ? 'active' : ''}`}
+              onClick={() => setMode('public')}
+            >
+              従来スカウト（量ベース）
             </button>
           </div>
           {mode === 'public' ? (

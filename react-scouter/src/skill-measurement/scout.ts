@@ -11,6 +11,7 @@ import {
   fetchAuthenticatedLogin,
   fetchFileText,
   fetchOwnedRepos,
+  fetchPublicRepos,
   fetchRecentCommits,
   fetchRepoMeta,
   fetchRepoTree,
@@ -103,28 +104,23 @@ const KEY_FILES = [
   'Cargo.toml',
 ];
 
-export interface DeepScoutOptions {
+export interface ScoutOptions {
   /** ユーザーがピン留めした代表 repo の full_name */
   pinnedFullNames?: string[];
 }
 
-/**
- * deep 自己診断：本人のトークン（repo スコープ）で private 含む代表作を測る。
- *
- * 取得 → サンプリング → 各repoの tree/commits/config/meta 収集 → 組み立て。
- * 🔵（レビュー数・外部PR・公開ライブラリ・DL数）は未取得＝S5以上は後追いで解禁する。
- */
-export async function scoutDeep(
-  token: string,
-  options: DeepScoutOptions = {}
-): Promise<ScoutResult> {
-  const repos = await fetchOwnedRepos(token);
+/** サンプルから各repoのデータを集める（tree/commits/config/meta）。 */
+async function collectRepoData(
+  repos: readonly GitHubRepo[],
+  token: string | null,
+  pinnedFullNames: string[]
+): Promise<RepoData[]> {
   const sample = selectRepresentativeRepos(repos, {
     ...DEFAULT_SAMPLING_POLICY,
-    pinnedFullNames: options.pinnedFullNames ?? [],
+    pinnedFullNames,
   });
 
-  const repoData = await Promise.all(
+  return Promise.all(
     sample.map(async ({ repo }): Promise<RepoData> => {
       const [tree, commits, meta] = await Promise.all([
         fetchRepoTree(repo.full_name, repo.default_branch, token),
@@ -144,8 +140,46 @@ export async function scoutDeep(
       return { repo, tree, commits, configFiles, meta };
     })
   );
+}
 
-  const account = await buildAccountEvidence(token, repoData);
+/**
+ * deep 自己診断：本人のトークン（repo スコープ）で private 含む代表作を測る。
+ * 🔵（レビュー数・外部PR・DL数）は未取得＝S6以上の一部は後追いで解禁する。
+ */
+export async function scoutDeep(
+  token: string,
+  options: ScoutOptions = {}
+): Promise<ScoutResult> {
+  const login = await fetchAuthenticatedLogin(token);
+  const repos = await fetchOwnedRepos(token);
+  const repoData = await collectRepoData(
+    repos,
+    token,
+    options.pinnedFullNames ?? []
+  );
+  const account = await buildAccountEvidence(login, repoData, token);
+  return assembleScoutResult(repoData, account);
+}
+
+/**
+ * 公開スカウト（新エンジン）：任意ユーザーの公開リポジトリを同じ基準で測る。
+ *
+ * 量ではなく規律・作り込みで測るので、バイブコーディング量産者を正しく低く出せる。
+ * private は見えないが、他者どうしの比較はこれで成立する（旧 calculatePowerLevel の置換）。
+ * token はレート制限緩和のため任意で渡す。
+ */
+export async function scoutPublic(
+  username: string,
+  token: string | null = null,
+  options: ScoutOptions = {}
+): Promise<ScoutResult> {
+  const repos = await fetchPublicRepos(username, token);
+  const repoData = await collectRepoData(
+    repos,
+    token,
+    options.pinnedFullNames ?? []
+  );
+  const account = await buildAccountEvidence(username, repoData, token);
   return assembleScoutResult(repoData, account);
 }
 
@@ -178,10 +212,10 @@ async function detectPublishedLibrary(
 
 /** 🟢で取れるアカウント証拠。🔵分（レビュー/外部PR/DL数）は後追いで解禁する。 */
 async function buildAccountEvidence(
-  token: string,
-  repoData: readonly RepoData[]
+  login: string,
+  repoData: readonly RepoData[],
+  token: string | null
 ): Promise<AccountEvidence> {
-  const login = await fetchAuthenticatedLogin(token);
   const profileReadme = await fetchFileText(
     `${login}/${login}`,
     'README.md',

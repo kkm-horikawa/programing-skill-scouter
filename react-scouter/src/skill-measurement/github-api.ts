@@ -60,6 +60,36 @@ export async function fetchOwnedRepos(token: string): Promise<GitHubRepo[]> {
 }
 
 /**
+ * 任意ユーザーの公開 repo を全取得（公開スカウト用）。
+ * 他人を新エンジンで測るための入口。private は GitHub の仕様上含まれない。
+ * トークンはレート制限緩和のため（他人の公開データ読み取りに権限は不要）。
+ */
+export async function fetchPublicRepos(
+  username: string,
+  token: string | null
+): Promise<GitHubRepo[]> {
+  const headers = authHeaders(token);
+  const all: GitHubRepo[] = [];
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const res = await fetch(
+      `${GITHUB_API}/users/${username}/repos?per_page=${PER_PAGE}&page=${page}&sort=pushed`,
+      { headers }
+    );
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch public repos for ${username} (page ${page}): ${res.status} ${res.statusText}`
+      );
+    }
+    const batch = (await res.json()) as GitHubRepo[];
+    all.push(...batch);
+    if (batch.length < PER_PAGE) break;
+  }
+
+  return all;
+}
+
+/**
  * リポジトリの全ファイルパスを1コールで取得（recursive tree）。
  * バッジ／ヒューリスティック検出の入力になる。
  */
