@@ -60,14 +60,6 @@ export interface AccountEvidence {
   followers: number;
   /** 代表repoの fork 合計 */
   totalForks: number;
-  /**
-   * あなたが他人の repo にマージされたPR数（OSS貢献）。
-   * 「自分のrepoが受けたPR」ではない点に注意——後者は所有者/立場の指標で、
-   * 無レビューマージ（スロップ）を褒めてしまうため評価に使わない。
-   */
-  externalAuthoredPRs: number;
-  /** あなたが他人のPRをレビューした数 */
-  reviewsGiven: number;
 }
 
 export interface SpineResult {

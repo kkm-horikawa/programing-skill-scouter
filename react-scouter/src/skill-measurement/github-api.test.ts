@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   authHeaders,
   fetchCommitStats,
-  fetchContributionStats,
   fetchFileText,
   fetchOwnedRepos,
   fetchRecentCommits,
@@ -163,54 +162,5 @@ describe('fetchFileText', () => {
     await expect(
       fetchFileText('octocat/repo', 'tsconfig.json', null)
     ).rejects.toThrow(/500/);
-  });
-});
-
-describe('fetchContributionStats', () => {
-  it('トークンなしでは 0/0', async () => {
-    expect(await fetchContributionStats('octocat', null)).toEqual({
-      reviewsGiven: 0,
-      externalAuthoredPRs: 0,
-    });
-  });
-
-  it('レビュー数と外部repoへのPR数（自repoは除外）を集計する', async () => {
-    mockFetch(() => ({
-      ok: true,
-      body: {
-        data: {
-          user: {
-            contributionsCollection: {
-              totalPullRequestReviewContributions: 12,
-              pullRequestContributionsByRepository: [
-                {
-                  repository: { owner: { login: 'octocat' } },
-                  contributions: { totalCount: 5 },
-                },
-                {
-                  repository: { owner: { login: 'someorg' } },
-                  contributions: { totalCount: 3 },
-                },
-                {
-                  repository: { owner: { login: 'other' } },
-                  contributions: { totalCount: 2 },
-                },
-              ],
-            },
-          },
-        },
-      },
-    }));
-    const stats = await fetchContributionStats('octocat', 'ghp_x');
-    expect(stats.reviewsGiven).toBe(12);
-    expect(stats.externalAuthoredPRs).toBe(5); // someorg(3)+other(2)、自分のoctocatは除外
-  });
-
-  it('GraphQL が非 OK なら 0/0（壊さない）', async () => {
-    mockFetch(() => ({ ok: false, status: 502, body: {} }));
-    expect(await fetchContributionStats('octocat', 'ghp_x')).toEqual({
-      reviewsGiven: 0,
-      externalAuthoredPRs: 0,
-    });
   });
 });

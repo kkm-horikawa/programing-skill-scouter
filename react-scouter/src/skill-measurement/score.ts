@@ -26,26 +26,21 @@ export const TIER_BANDS: Record<SpineTier, readonly [number, number]> = {
  * 採用シグナル（reach）。技術力の指標ではないが、star 等は稀なので
  * 戦闘力に「青天井のプラスアルファ」として線形に加算する（際限なく伸ばす）。
  */
+/**
+ * 採用シグナル（reach）＝ star / fork / follower の純粋な採用のみ。
+ *
+ * NOTE: PR数・レビュー数などの「活動カウント」は意図的に含めない。実測の結果、
+ * org/業務repoへのPR乱発（vibe-coding含む）で容易に膨らみ、「他人に検証された」を
+ * 意味しないと判明した。star/fork/follower は稀で、活動量では増えない採用の証。
+ */
 export interface ReachSignals {
   stars: number;
   followers: number;
   forks: number;
-  /** あなたが他人の repo にマージされたPR数（OSS貢献。他人の審査を通した証） */
-  externalAuthoredPRs: number;
-  reviewsGiven: number;
 }
 
-/**
- * reach 1単位あたりの戦闘力。
- * 「他人の審査を通した貢献（外部PR）」を最重視。star/fork/follower は
- * 数が出やすいぶん1単位は小さめ。
- *
- * NOTE: 「自分のrepoが受けたPR」は意図的に含めない。所有者/立場の指標であり、
- * 無レビューマージ（スロップ量産）を高評価してしまうため。
- */
+/** reach 1単位あたりの戦闘力。star を主役に。 */
 const REACH_WEIGHTS: Record<keyof ReachSignals, number> = {
-  externalAuthoredPRs: 800,
-  reviewsGiven: 200,
   stars: 100,
   forks: 60,
   followers: 40,
@@ -55,8 +50,6 @@ const NO_REACH: ReachSignals = {
   stars: 0,
   followers: 0,
   forks: 0,
-  externalAuthoredPRs: 0,
-  reviewsGiven: 0,
 };
 
 /** 採用シグナルから青天井のボーナスを算出する。 */
