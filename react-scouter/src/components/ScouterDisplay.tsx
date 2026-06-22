@@ -1789,8 +1789,8 @@ const analyzeLibraries = async (
       { category: string; usage: number; versions: Set<string> }
     > = {};
 
-    // 分析するリポジトリを制限（APIコール数を抑える）
-    const reposToAnalyze = repos.slice(0, 20);
+    // 履歴書の下書きは網羅性優先。多めのリポジトリから依存を集める。
+    const reposToAnalyze = repos.slice(0, 50);
 
     for (const repo of reposToAnalyze) {
       try {
@@ -2130,8 +2130,7 @@ const analyzeLibraries = async (
             versions: Array.from(data.versions),
           };
         })
-        .sort((a, b) => b.usage - a.usage)
-        .slice(0, 10); // 各言語のトップ10
+        .sort((a, b) => b.usage - a.usage); // 網羅優先で切り捨てない
 
       languages.push({
         language,

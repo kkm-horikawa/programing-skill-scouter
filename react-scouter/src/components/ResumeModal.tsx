@@ -117,8 +117,19 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
           });
         }
 
-        // フレームワーク・ライブラリ・ツール: techStack と全ライブラリをフラットに結合
-        const detectedTech = new Set<string>();
+        // フレームワーク・ライブラリ・ツール: techStack と全ライブラリをフラットに結合。
+        // 大小文字を無視して重複排除し、言語名や曖昧なエコシステム表記は除く。
+        const langNames = new Set(
+          techData.languages.map((l) => l.name.toLowerCase())
+        );
+        // エコシステムを示すだけの曖昧ラベル（言語行と重複し情報量が薄い）
+        const noiseLabels = new Set(['node.js/npm', 'python (modern)']);
+        const detectedTech = new Map<string, string>(); // 小文字キー -> 表示名
+        const addTech = (item: string) => {
+          const key = item.trim().toLowerCase();
+          if (!key || langNames.has(key) || noiseLabels.has(key)) return;
+          if (!detectedTech.has(key)) detectedTech.set(key, item.trim());
+        };
         const ts = techData.techStack;
         [
           ts.frameworks,
@@ -126,15 +137,15 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
           ts.testing,
           ts.databases,
           ts.infrastructure,
-        ].forEach((set) => set.forEach((item) => detectedTech.add(item)));
+        ].forEach((set) => set.forEach(addTech));
         techData.libraryAnalysis?.languages.forEach((langLib) =>
-          langLib.libraries.forEach((lib) => detectedTech.add(lib.name))
+          langLib.libraries.forEach((lib) => addTech(lib.name))
         );
         if (detectedTech.size > 0) {
           defaultSkills.push({
             category:
               'フレームワーク・ライブラリ・ツール（編集で分類してください）',
-            content: Array.from(detectedTech).join(', '),
+            content: Array.from(detectedTech.values()).join(', '),
           });
         }
 
