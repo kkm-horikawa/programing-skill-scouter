@@ -10,7 +10,7 @@ import { structureMetrics, type StructureMetrics } from './structure';
 export type { CommitSummary } from './commit-behavior';
 export type { ConfigRigor } from './config-rigor';
 export { structureMetrics } from './structure';
-export { commitBehavior } from './commit-behavior';
+export { commitBehavior, isCommitSlop } from './commit-behavior';
 export { configRigor } from './config-rigor';
 
 /** 1リポジトリの craft 計量（H-a 構造 ＋ H-b コミット振る舞い ＋ H-c 設定厳密さ）。 */

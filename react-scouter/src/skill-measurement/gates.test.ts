@@ -146,7 +146,23 @@ describe('evaluateSpineTier - 降格キャップ', () => {
     });
     const r = evaluateSpineTier([showcase, slop], bareAccount());
     expect(r.tier).toBe('S1');
-    expect(r.cappedBy).toMatch(/CI・テスト/);
+    expect(r.cappedBy).toMatch(/規律/);
+  });
+
+  it('コミットがスロップ的（巨大ダンプ＋定型）な規模repoだけならキャップ', () => {
+    const showcase = bareRepo({
+      hasCI: true,
+      nonTrivialTests: true,
+      hasLinter: true,
+    });
+    const commitSlop = bareRepo({
+      isSubstantial: true,
+      hasCI: true, // CIはあるがコミットがスロップ
+      nonTrivialTests: true,
+      commitSlop: true,
+    });
+    const r = evaluateSpineTier([showcase, commitSlop], bareAccount());
+    expect(r.tier).toBe('S1');
   });
 
   it('規模あるrepoの1つでも規律があればキャップしない', () => {

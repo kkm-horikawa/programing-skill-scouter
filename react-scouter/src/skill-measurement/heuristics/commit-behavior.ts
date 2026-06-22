@@ -44,6 +44,18 @@ function firstLine(message: string): string {
   return message.split('\n')[0].trim();
 }
 
+/**
+ * このコミット履歴がスロップ的か（巨大ダンプが多く、かつ定型メッセージが多い）。
+ * 降格キャップ（gates）を H-b で強化するための判定。
+ */
+export function isCommitSlop(behavior: CommitBehavior): boolean {
+  return (
+    behavior.count > 0 &&
+    behavior.giantDumpRate > 0.5 &&
+    behavior.genericRate > 0.5
+  );
+}
+
 export function commitBehavior(
   commits: readonly CommitSummary[]
 ): CommitBehavior {

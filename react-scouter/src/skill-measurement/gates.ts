@@ -42,6 +42,8 @@ export interface RepoEvidence {
   hasReleases: boolean;
   isContainerized: boolean;
   hasDocsSite: boolean;
+  /** コミット振る舞いがスロップ的か（巨大ダンプ＋定型メッセージ。H-b 由来、未算出は undefined） */
+  commitSlop?: boolean;
 }
 
 /** アカウント全体の実証痕跡（per-repoでなく本人単位の信号） */
@@ -121,16 +123,17 @@ export function tierRank(tier: SpineTier): number {
  * 降格キャップ：規模あるrepoに一貫して規律が無ければ S1 に落とす。
  *
  * S2を「小さなデモrepo1個」で通過しても、本命の substantial repo が軒並み
- * テスト0・CI0なら実態はスロップ → キャップ。これが「見せ repo」ゲーミング対策。
+ * スロップ的なら実態はスロップ → キャップ。これが「見せ repo」ゲーミング対策。
  *
- * NOTE: step4 で main直コミット率・定型コミット率（H-bヒューリスティック）を
- * 加えてキャップ条件を強化する。現状はツリー由来（CI・テストの不在）のみ。
+ * スロップ的＝（CI0 かつ テスト0）または コミットが巨大ダンプ＋定型メッセージ（H-b）。
  */
 function demotionReason(repos: readonly RepoEvidence[]): string | null {
   const substantial = repos.filter((r) => r.isSubstantial);
   if (substantial.length === 0) return null;
-  const allBare = substantial.every((r) => !r.hasCI && !r.nonTrivialTests);
-  return allBare ? '規模あるリポジトリに一貫してCI・テストが無い' : null;
+  const isSlopShaped = (r: RepoEvidence) =>
+    (!r.hasCI && !r.nonTrivialTests) || r.commitSlop === true;
+  const allSlop = substantial.every(isSlopShaped);
+  return allSlop ? '規模あるリポジトリに一貫して規律が無い' : null;
 }
 
 /** 背骨ゲートを評価して階級を返す。 */
