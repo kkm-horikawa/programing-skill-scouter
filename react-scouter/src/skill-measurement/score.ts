@@ -39,11 +39,16 @@ export interface ReachSignals {
   forks: number;
 }
 
-/** reach 1単位あたりの戦闘力。star を主役に。 */
+/**
+ * reach 1単位あたりの戦闘力。
+ * fork（実際に使う/ビルドする）> star（ブクマ/喝采）> follower（社会的注目）。
+ * fork を star より重くすることで「知名度で星は付くが使われていない」repo を抑え、
+ * 中規模の知名度が本物の craft を上回らないように較正している。
+ */
 const REACH_WEIGHTS: Record<keyof ReachSignals, number> = {
-  stars: 100,
-  forks: 60,
-  followers: 40,
+  forks: 50,
+  stars: 30,
+  followers: 15,
 };
 
 const NO_REACH: ReachSignals = {

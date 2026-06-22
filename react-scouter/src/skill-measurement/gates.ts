@@ -88,7 +88,13 @@ function craftGatePass(
     case 'S1':
       return some((r) => r.hasRealCode);
     case 'S2':
-      return some((r) => r.hasCI && r.nonTrivialTests && r.hasLinter);
+      // 同一repoに3つ揃わなくても、サンプル全体で CI・テスト・Linter を実践していれば通過。
+      // (CIは全repo・テストは別repo…と規律を分散して持つ堅実な中級を取りこぼさない)
+      return (
+        some((r) => r.hasCI) &&
+        some((r) => r.nonTrivialTests) &&
+        some((r) => r.hasLinter)
+      );
     case 'S3':
       return (
         account.hasProfileReadme &&

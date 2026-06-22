@@ -54,12 +54,23 @@ describe('craft 軸（規律の連続ラダー）', () => {
     expect(r.craftTier).toBe('S2');
   });
 
-  it('S2要素が1つでも欠ければ craft は S1 止まり（非補償）', () => {
+  it('CI・テスト・Linter がどこにも無ければ S1 止まり（非補償）', () => {
     const r = evaluateSpineTier(
       [bareRepo({ hasCI: true, nonTrivialTests: true, hasLinter: false })],
       bareAccount()
     );
     expect(r.craftTier).toBe('S1');
+  });
+
+  it('別々のrepoに分散していても、サンプル全体で3つ揃えば S2', () => {
+    const r = evaluateSpineTier(
+      [
+        bareRepo({ fullName: 'u/a', hasCI: true, nonTrivialTests: true }),
+        bareRepo({ fullName: 'u/b', hasLinter: true }),
+      ],
+      bareAccount()
+    );
+    expect(r.craftTier).toBe('S2');
   });
 
   it('規律＋プロフィールREADME で S3', () => {
