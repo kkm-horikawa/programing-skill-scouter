@@ -53,6 +53,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
   >(null);
   const [showComplete, setShowComplete] = useState(false);
   const [craftLabel, setCraftLabel] = useState<string | null>(null);
+  const [measuredAt, setMeasuredAt] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const animationRef = useRef<number | undefined>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -265,6 +266,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         earnedBadges: earnedBadgeLabels(scoutResult.badges.earned),
       };
       setCraftLabel(`${skillMeasurement.craftTierLabel} (${craftTier})`);
+      setMeasuredAt(new Date().toLocaleDateString('ja-JP'));
       setProgress(100);
       setLoadingMessage('分析完了！');
 
@@ -943,6 +945,17 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
             : 'TARGET: '}
         </text>
 
+        {measuredAt && (
+          <text
+            x="5%"
+            y="13%"
+            className="small-label scouter-text"
+            style={{ fontSize: '0.7em' }}
+          >
+            測定日: {measuredAt}
+          </text>
+        )}
+
         <text x="5%" y="16%" className="label scouter-text">
           {isScanning ? 'SCANNING TARGET...' : 'STANDBY'}
         </text>
@@ -970,7 +983,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
             </text>
 
             {craftLabel && (
-              <text x="5%" y="60%" className="small-label scouter-text">
+              <text x="5%" y="57%" className="small-label scouter-text">
                 技術階級: {craftLabel}
               </text>
             )}
