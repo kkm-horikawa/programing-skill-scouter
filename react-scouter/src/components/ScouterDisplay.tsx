@@ -12,7 +12,10 @@ import type {
   LanguageStats,
   ProfileReadme,
   Organization,
+  SkillMeasurementSummary,
 } from '../types/github';
+import { scoutPublic } from '../skill-measurement/scout';
+import { summarize } from '../skill-measurement/ui/labels';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
@@ -40,6 +43,8 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     import('../types/github').ContributionDetails | null
   >(null);
   const [showComplete, setShowComplete] = useState(false);
+  const [measurement, setMeasurement] =
+    useState<SkillMeasurementSummary | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const animationRef = useRef<number | undefined>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -256,6 +261,19 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         totalContributionData,
         totalLanguageBytes
       );
+
+      // 新エンジンで内部判定を置き換える（量ではなく規律・採用で測る）。
+      // 失敗時（レート制限等）は旧 calculatePowerLevel の値にフォールバックする。
+      let skillMeasurement: SkillMeasurementSummary | undefined;
+      try {
+        const token = localStorage.getItem('github_token');
+        const scoutResult = await scoutPublic(mainUserData.login, token);
+        skillMeasurement = summarize(scoutResult);
+        result.power = scoutResult.score.power;
+      } catch (e) {
+        console.warn('新エンジンの測定に失敗、旧スコアにフォールバック:', e);
+      }
+      setMeasurement(skillMeasurement ?? null);
       setProgress(100);
       setLoadingMessage('分析完了！');
 
@@ -350,6 +368,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           libraryData.status === 'fulfilled' && libraryData.value
             ? libraryData.value
             : undefined,
+        skillMeasurement,
       };
 
       // コントリビューション詳細を保存
@@ -1238,7 +1257,10 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         {displayStats && (
           <>
             <text x="5%" y="52%" className="rank scouter-text">
-              RANK: {determineRank(displayStats.power)}
+              RANK:{' '}
+              {measurement
+                ? `${measurement.tierLabel} (${measurement.tier})`
+                : determineRank(displayStats.power)}
             </text>
 
             <g className="stats-group">

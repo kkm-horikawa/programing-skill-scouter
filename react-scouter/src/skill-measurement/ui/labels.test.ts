@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { SpineResult } from '../gates';
-import { gateChecklist, nextRequirement, TIER_LABELS } from './labels';
+import type { ScoutResult } from '../scout';
+import {
+  gateChecklist,
+  nextRequirement,
+  summarize,
+  TIER_LABELS,
+} from './labels';
 
 const spine = (over: Partial<SpineResult> = {}): SpineResult => ({
   tier: 'S2',
@@ -47,5 +53,53 @@ describe('TIER_LABELS', () => {
   it('全階級にラベルがある', () => {
     expect(TIER_LABELS.S0).toBe('休眠');
     expect(TIER_LABELS.S7).toBe('エキスパート');
+  });
+});
+
+describe('summarize', () => {
+  const result: ScoutResult = {
+    score: {
+      power: 45000,
+      tier: 'S3',
+      bandBase: 30000,
+      bandCeiling: 60000,
+      fill: 0.5,
+    },
+    spine: {
+      tier: 'S3',
+      clearedGates: ['S1', 'S2', 'S3'],
+      craftTier: 'S3',
+      reachTier: 'S2',
+    },
+    badges: {
+      earned: new Set(['git.codeowners', 'quality.eslint']),
+      byGroup: {
+        'G-Git': { earned: 1, total: 9 },
+        'G-Quality': { earned: 1, total: 12 },
+        'G-Test': { earned: 0, total: 8 },
+        'G-CI': { earned: 0, total: 6 },
+        'G-Build': { earned: 0, total: 5 },
+        'G-Security': { earned: 0, total: 6 },
+      },
+      fill: 2 / 46,
+    },
+    craftScore: 0.6,
+  };
+
+  it('ScoutResult を履歴書向けサマリに変換する', () => {
+    const s = summarize(result);
+    expect(s.tierLabel).toBe('中級');
+    expect(s.tier).toBe('S3');
+    expect(s.craftTier).toBe('S3');
+    expect(s.reachTier).toBe('S2');
+    expect(s.power).toBe(45000);
+    expect(s.earnedBadgeCount).toBe(2);
+    expect(s.gates.filter((g) => g.cleared)).toHaveLength(3);
+    expect(s.nextRequirement).toMatch(/リリース|コンテナ|docs/);
+    expect(s.badgeGroups).toContainEqual({
+      label: 'Git 運用規律',
+      earned: 1,
+      total: 9,
+    });
   });
 });

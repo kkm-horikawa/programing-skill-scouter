@@ -1,5 +1,7 @@
-import type { SpineResult, SpineTier } from '../gates';
+import type { SkillMeasurementSummary } from '../../types/github';
 import type { BadgeGroup } from '../badges/types';
+import type { SpineResult, SpineTier } from '../gates';
+import type { ScoutResult } from '../scout';
 
 /** 階級の日本語表示 */
 export const TIER_LABELS: Record<SpineTier, string> = {
@@ -79,4 +81,37 @@ export function gateChecklist(spine: SpineResult): GateRow[] {
 export function nextRequirement(spine: SpineResult): string | null {
   const next = GATE_DEFS.find((g) => !spine.clearedGates.includes(g.tier));
   return next ? next.requirement : null;
+}
+
+/**
+ * ScoutResult を履歴書・SVG 向けの平易なサマリに変換する。
+ * 表示層（既存モノリス）が skill-measurement の型に依存しないための境界。
+ */
+export function summarize(result: ScoutResult): SkillMeasurementSummary {
+  const { spine, badges, score } = result;
+  return {
+    tier: spine.tier,
+    tierLabel: TIER_LABELS[spine.tier],
+    craftTier: spine.craftTier,
+    reachTier: spine.reachTier,
+    power: score.power,
+    gates: gateChecklist(spine).map((g) => ({
+      tier: g.tier,
+      label: g.label,
+      requirement: g.requirement,
+      cleared: g.cleared,
+    })),
+    badgeGroups: (
+      Object.entries(badges.byGroup) as Array<
+        [BadgeGroup, { earned: number; total: number }]
+      >
+    ).map(([group, tally]) => ({
+      label: GROUP_LABELS[group],
+      earned: tally.earned,
+      total: tally.total,
+    })),
+    earnedBadgeCount: badges.earned.size,
+    nextRequirement: nextRequirement(spine),
+    cappedBy: spine.cappedBy,
+  };
 }
