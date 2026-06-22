@@ -1,4 +1,5 @@
 import type { GitHubRepo } from '../types/github';
+import type { RepoTree, RepoTreeEntry } from './types';
 
 /**
  * GitHub `/user/repos` のレスポンス形に沿った well-formed な repo を組み立てるファクトリ。
@@ -28,5 +29,32 @@ export function makeRepo(
     language: null,
     size: 1000,
     ...overrides,
+  };
+}
+
+/**
+ * パス列から RepoTree を組み立てる。`dir/` で終わるパスは tree、それ以外は blob。
+ * blob には任意のサイズを与えられる（`path:size` 形式）。
+ */
+export function makeTree(
+  paths: string[],
+  opts: { truncated?: boolean } = {}
+): RepoTree {
+  const entries: RepoTreeEntry[] = paths.map((raw) => {
+    const [path, sizeStr] = raw.split(':');
+    if (path.endsWith('/')) {
+      return { path: path.slice(0, -1), type: 'tree' };
+    }
+    return {
+      path,
+      type: 'blob',
+      size: sizeStr ? Number(sizeStr) : 1,
+    };
+  });
+  return {
+    fullName: 'octocat/repo',
+    branch: 'main',
+    entries,
+    truncated: opts.truncated ?? false,
   };
 }
