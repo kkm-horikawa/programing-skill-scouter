@@ -27,6 +27,7 @@ interface ScouterDisplayProps {
   scanData: PowerLevelResult | null;
   usernames: string[];
   deepMode: boolean;
+  orgLogins: string[];
   onScanComplete: (data: PowerLevelResult, techData: DetailedTechData) => void;
   onScanError: () => void;
 }
@@ -36,6 +37,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
   scanData,
   usernames,
   deepMode,
+  orgLogins,
   onScanComplete,
   onScanError,
 }) => {
@@ -133,8 +135,8 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       let allRepoData: GitHubRepo[] = [];
       const deepToken = localStorage.getItem('github_token');
       if (deepMode && deepToken) {
-        // DEEP分析: 本人の所有repo（private含む）を取得
-        allRepoData = await fetchOwnedRepos(deepToken);
+        // DEEP分析: 本人の所有repo＋選択したorgのrepo（private含む）を取得
+        allRepoData = await fetchOwnedRepos(deepToken, orgLogins);
       } else {
         for (const username of usernames) {
           try {
@@ -244,7 +246,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       const token = localStorage.getItem('github_token');
       const scoutResult =
         deepMode && token
-          ? await scoutDeep(token)
+          ? await scoutDeep(token, { orgLogins })
           : await scoutPublic(mainUserData.login, token);
       const result: PowerLevelResult = {
         power: scoutResult.score.power,

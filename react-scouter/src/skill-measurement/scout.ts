@@ -113,6 +113,8 @@ const KEY_FILES = [
 export interface ScoutOptions {
   /** ユーザーがピン留めした代表 repo の full_name */
   pinnedFullNames?: string[];
+  /** DEEP分析で自分とみなす org の login（個人所有repoに加えて含める） */
+  orgLogins?: string[];
 }
 
 /** サンプルから各repoのデータを集める（tree/commits/config/meta）。 */
@@ -157,7 +159,7 @@ export async function scoutDeep(
   options: ScoutOptions = {}
 ): Promise<ScoutResult> {
   const login = await fetchAuthenticatedLogin(token);
-  const repos = await fetchOwnedRepos(token);
+  const repos = await fetchOwnedRepos(token, options.orgLogins ?? []);
   const repoData = await collectRepoData(
     repos,
     token,

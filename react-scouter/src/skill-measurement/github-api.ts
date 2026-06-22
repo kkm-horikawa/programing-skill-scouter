@@ -48,14 +48,75 @@ export async function fetchAuthenticatedLogin(token: string): Promise<string> {
   return data.login;
 }
 
+/** org メンバーシップの1件（選択UI用） */
+export interface OrgMembership {
+  login: string;
+  /** admin=オーナー。member=単なる所属 */
+  isAdmin: boolean;
+}
+
 /**
- * 認証ユーザー本人が所有する repo を全取得（private 含む）。
- * deep 自己診断モード用。`repo` スコープのトークンが必要。
- * 他人の private は GitHub の仕様上取得できない＝このモードは本人専用。
+ * 認証ユーザーが所属する org 一覧（役割つき）。DEEP分析の org 選択UIに使う。
+ * 失敗・未取得は空。`read:org` スコープ推奨。
  */
-export async function fetchOwnedRepos(token: string): Promise<GitHubRepo[]> {
+export async function fetchUserOrgMemberships(
+  token: string
+): Promise<OrgMembership[]> {
+  try {
+    const res = await fetch(
+      `${GITHUB_API}/user/memberships/orgs?per_page=${PER_PAGE}&state=active`,
+      { headers: authHeaders(token) }
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as Array<{
+      role?: string;
+      organization?: { login?: string };
+    }>;
+    return data
+      .map((m) => ({
+        login: m.organization?.login ?? '',
+        isAdmin: m.role === 'admin',
+      }))
+      .filter((o) => o.login);
+  } catch {
+    return [];
+  }
+}
+
+/** 指定 org の repo を全取得（private 含む、type=all）。失敗は空。 */
+async function fetchOrgRepos(
+  org: string,
+  token: string
+): Promise<GitHubRepo[]> {
   const headers = authHeaders(token);
   const all: GitHubRepo[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const res = await fetch(
+      `${GITHUB_API}/orgs/${org}/repos?type=all&per_page=${PER_PAGE}&page=${page}&sort=pushed`,
+      { headers }
+    );
+    if (!res.ok) break;
+    const batch = (await res.json()) as GitHubRepo[];
+    all.push(...batch);
+    if (batch.length < PER_PAGE) break;
+  }
+  return all;
+}
+
+/**
+ * 認証ユーザーの自己分析対象 repo を全取得（private 含む）。
+ * deep 自己診断モード用。`repo` スコープのトークンが必要。
+ *
+ * 「個人所有(affiliation=owner)」＋「呼び出し側が選択した org の repo」。
+ * org は単なる所属を全部入れず、ユーザーが「自分」とみなす org だけを選ぶ前提。
+ * 他人の private は GitHub 仕様上取得できず本人専用。
+ */
+export async function fetchOwnedRepos(
+  token: string,
+  orgLogins: readonly string[] = []
+): Promise<GitHubRepo[]> {
+  const headers = authHeaders(token);
+  const personal: GitHubRepo[] = [];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
     const res = await fetch(
@@ -68,11 +129,19 @@ export async function fetchOwnedRepos(token: string): Promise<GitHubRepo[]> {
       );
     }
     const batch = (await res.json()) as GitHubRepo[];
-    all.push(...batch);
+    personal.push(...batch);
     if (batch.length < PER_PAGE) break;
   }
 
-  return all;
+  const orgRepos = (
+    await Promise.all(orgLogins.map((org) => fetchOrgRepos(org, token)))
+  ).flat();
+
+  // full_name で重複排除（個人とorg重複は通常無いが念のため）
+  const byName = new Map<string, GitHubRepo>();
+  for (const repo of [...personal, ...orgRepos])
+    byName.set(repo.full_name, repo);
+  return [...byName.values()];
 }
 
 /**
