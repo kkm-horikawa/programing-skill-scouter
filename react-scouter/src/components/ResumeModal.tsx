@@ -106,68 +106,36 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
         // GitHubデータからスキルのデフォルト値を作成
         const defaultSkills: Array<{ category: string; content: string }> = [];
 
-        // 主要プログラミング言語
+        // 下書きは「網羅性」優先で、検出したものを全部フラットに列挙する。
+        // 細かいカテゴリ分けは編集機能で人間が行う前提（lossyな自動分類はしない）。
+
+        // 言語: GitHub が検出した全言語（pyproject→Python, go.mod→Go… の網羅版）
         if (techData.languages.length > 0) {
           defaultSkills.push({
-            category: '主要プログラミング言語',
-            content: techData.languages
-              .map((lang) => `${lang.name} (${lang.percentage}%)`)
-              .join(', '),
+            category: 'プログラミング言語',
+            content: techData.languages.map((lang) => lang.name).join(', '),
           });
         }
 
-        // ライブラリ分析が利用可能な場合の詳細情報
-        if (techData.libraryAnalysis) {
-          // 言語別の主要ライブラリ
-          techData.libraryAnalysis.languages.forEach((langLib) => {
-            if (langLib.libraries.length > 0) {
-              const topLibs = langLib.libraries.slice(0, 5);
-              defaultSkills.push({
-                category: `${langLib.language}主要ライブラリ`,
-                content: topLibs
-                  .map((lib) => `${lib.name} (${lib.usage}プロジェクトで使用)`)
-                  .join(', '),
-              });
-            }
+        // フレームワーク・ライブラリ・ツール: techStack と全ライブラリをフラットに結合
+        const detectedTech = new Set<string>();
+        const ts = techData.techStack;
+        [
+          ts.frameworks,
+          ts.devops,
+          ts.testing,
+          ts.databases,
+          ts.infrastructure,
+        ].forEach((set) => set.forEach((item) => detectedTech.add(item)));
+        techData.libraryAnalysis?.languages.forEach((langLib) =>
+          langLib.libraries.forEach((lib) => detectedTech.add(lib.name))
+        );
+        if (detectedTech.size > 0) {
+          defaultSkills.push({
+            category:
+              'フレームワーク・ライブラリ・ツール（編集で分類してください）',
+            content: Array.from(detectedTech).join(', '),
           });
-
-          // 技術カテゴリ別のスキル
-          const categoryMap: Record<string, string[]> = {};
-          techData.libraryAnalysis.topLibraries.forEach((lib) => {
-            if (!categoryMap[lib.category]) {
-              categoryMap[lib.category] = [];
-            }
-            categoryMap[lib.category].push(lib.name);
-          });
-
-          // カテゴリ別に追加
-          Object.entries(categoryMap).forEach(([category, libs]) => {
-            if (
-              libs.length > 0 &&
-              !defaultSkills.some((skill) => skill.category === category)
-            ) {
-              defaultSkills.push({
-                category,
-                content: libs.slice(0, 10).join(', '),
-              });
-            }
-          });
-        } else {
-          // 従来のフレームワーク・ライブラリ情報
-          if (Array.from(techData.techStack.frameworks).length > 0) {
-            defaultSkills.push({
-              category: 'フレームワーク・ライブラリ',
-              content: Array.from(techData.techStack.frameworks).join(', '),
-            });
-          }
-
-          // 開発・運用ツール
-          if (Array.from(techData.techStack.devops).length > 0) {
-            defaultSkills.push({
-              category: '開発・運用ツール',
-              content: Array.from(techData.techStack.devops).join(', '),
-            });
-          }
         }
 
         // GitHubデータから技術経歴の豊富なデフォルト値を作成
