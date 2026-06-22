@@ -56,3 +56,8 @@ export function evaluateBadges(
   const fill = ALL_BADGES.length ? earned.size / ALL_BADGES.length : 0;
   return { earned, byGroup, fill };
 }
+
+/** 獲得バッジIDを人間向けラベルに変換する（履歴書に具体名で列挙するため）。 */
+export function earnedBadgeLabels(earned: ReadonlySet<string>): string[] {
+  return ALL_BADGES.filter((b) => earned.has(b.id)).map((b) => b.label);
+}

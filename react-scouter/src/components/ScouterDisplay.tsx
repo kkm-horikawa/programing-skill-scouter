@@ -14,6 +14,8 @@ import type {
   Organization,
 } from '../types/github';
 import { scoutPublic } from '../skill-measurement/scout';
+import { earnedBadgeLabels } from '../skill-measurement/badges';
+import { TIER_LABELS } from '../skill-measurement/ui/labels';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
@@ -41,6 +43,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     import('../types/github').ContributionDetails | null
   >(null);
   const [showComplete, setShowComplete] = useState(false);
+  const [craftLabel, setCraftLabel] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const animationRef = useRef<number | undefined>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -235,6 +238,14 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           combinedActivityData
         ),
       };
+      // 技術階級(craft)は戦闘力(RANK=人気込み)とは別の純粋な技術力指標として併記する
+      const craftTier = scoutResult.spine.craftTier;
+      const skillMeasurement = {
+        craftTier,
+        craftTierLabel: TIER_LABELS[craftTier],
+        earnedBadges: earnedBadgeLabels(scoutResult.badges.earned),
+      };
+      setCraftLabel(`${skillMeasurement.craftTierLabel} (${craftTier})`);
       setProgress(100);
       setLoadingMessage('分析完了！');
 
@@ -329,6 +340,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           libraryData.status === 'fulfilled' && libraryData.value
             ? libraryData.value
             : undefined,
+        skillMeasurement,
       };
 
       // コントリビューション詳細を保存
@@ -925,6 +937,12 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
             <text x="5%" y="52%" className="rank scouter-text">
               RANK: {determineRank(displayStats.power)}
             </text>
+
+            {craftLabel && (
+              <text x="5%" y="60%" className="small-label scouter-text">
+                技術階級: {craftLabel}
+              </text>
+            )}
 
             <g className="stats-group">
               <text x="50%" y="16%" className="label scouter-text">

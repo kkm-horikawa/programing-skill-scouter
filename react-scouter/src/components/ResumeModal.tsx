@@ -1296,6 +1296,23 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
                 使用技術・特技・アピールポイントなど
               </div>
               <div className="skills-content">
+                {techData?.skillMeasurement &&
+                  techData.skillMeasurement.earnedBadges.length > 0 && (
+                    <div
+                      className="skill-badges-row"
+                      style={{
+                        marginBottom: '8px',
+                        fontSize: '12px',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      <strong>
+                        技術階級 {techData.skillMeasurement.craftTierLabel}（
+                        {techData.skillMeasurement.craftTier}）／達成項目：
+                      </strong>
+                      {techData.skillMeasurement.earnedBadges.join('・')}
+                    </div>
+                  )}
                 {(editableData.customSkills || []).length === 0 &&
                 !isEditing ? (
                   <div
