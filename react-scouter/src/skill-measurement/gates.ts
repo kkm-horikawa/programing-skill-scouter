@@ -1,11 +1,14 @@
 /**
- * 背骨ゲート：非補償の階級判定。
+ * 階級判定：二軸（craft × reach）を独立に出し、強い方を採る。
  *
- * 足し算スコアと違い、ある能力を実証しない限り次の段（＝桁）に上がれない。
- * 量で代替できないので、AI生成PRの量産者を構造的に頭打ちにする。
+ * - craft 軸：規律の連続ラダー（S1-S5）。CI/テスト/出荷/公開などの作り込み。
+ *   検出器（ツール痕跡）に依存するので、ツールを使わない領域では過小評価しうる。
+ * - reach 軸：star/follower/fork/外部貢献の閾値（最大S7）。検出器に依存しない。
+ *   世界が使った成果は偽造できないので、伝説（例: Linux）をここで拾う。
  *
- * 階級 = 下から連続で通過できた最上位の段（contiguous）。S2を落とせば
- * 上の段を満たしてもS1止まり。これが非補償性の核。
+ * 最終 = max(craft, reach)。スロップ量産者は両軸とも低い（採用も規律も無い）ので
+ * 頭打ちのまま。一方、検出器をすり抜ける本物は reach で正しく上がる。
+ * 量（commit/PR の生数）はどちらの軸でも使わない。
  */
 
 export const SPINE_TIERS = [
@@ -19,10 +22,6 @@ export const SPINE_TIERS = [
   'S7',
 ] as const;
 export type SpineTier = (typeof SPINE_TIERS)[number];
-
-/** star単独ルートは弱いので閾値を高めに置く（買われた星対策） */
-const STAR_GATE = 10;
-const DOWNLOAD_GATE = 1000;
 
 /** 1リポジトリから検出した実証痕跡（ツリー＋メタデータ由来） */
 export interface RepoEvidence {
@@ -42,7 +41,7 @@ export interface RepoEvidence {
   hasReleases: boolean;
   isContainerized: boolean;
   hasDocsSite: boolean;
-  /** コミット振る舞いがスロップ的か（巨大ダンプ＋定型メッセージ。H-b 由来、未算出は undefined） */
+  /** コミット振る舞いがスロップ的か（巨大ダンプ＋定型メッセージ。H-b 由来） */
   commitSlop?: boolean;
 }
 
@@ -57,6 +56,10 @@ export interface AccountEvidence {
   reviewsGiven: number;
   /** 代表repoの最大star */
   maxStars: number;
+  /** フォロワー数 */
+  followers: number;
+  /** 代表repoの fork 合計 */
+  totalForks: number;
   /** 公開ライブラリの実DL数（取れた場合。未取得は0） */
   libraryDownloads: number;
   /** 継続的なOSS貢献 */
@@ -67,14 +70,38 @@ export interface AccountEvidence {
 
 export interface SpineResult {
   tier: SpineTier;
-  /** 通過した背骨段 */
+  /** craft 軸で通過した段 */
   clearedGates: SpineTier[];
-  /** 降格キャップが効いた理由（効いた場合のみ） */
+  /** craft 軸の到達段 */
+  craftTier: SpineTier;
+  /** reach 軸の到達段 */
+  reachTier: SpineTier;
+  /** 降格キャップが効いた理由（craftを下げ、かつreachで救われなかった場合のみ） */
   cappedBy?: string;
 }
 
-/** その段のゲートを通過するか。「サンプル内のいずれかのrepoが満たす」で判定。 */
-function gatePass(
+export function tierRank(tier: SpineTier): number {
+  return SPINE_TIERS.indexOf(tier);
+}
+
+function maxTier(...tiers: SpineTier[]): SpineTier {
+  return tiers.reduce((a, b) => (tierRank(b) > tierRank(a) ? b : a), 'S0');
+}
+
+/** 閾値表から、value が満たす最上位の段を引く。降順 [閾値, 段]。 */
+function tierByThreshold(
+  value: number,
+  table: ReadonlyArray<readonly [number, SpineTier]>
+): SpineTier {
+  for (const [min, tier] of table) {
+    if (value >= min) return tier;
+  }
+  return 'S0';
+}
+
+// ── craft 軸（規律の連続ラダー S1-S5）─────────────────────────
+
+function craftGatePass(
   tier: SpineTier,
   repos: readonly RepoEvidence[],
   account: AccountEvidence
@@ -98,33 +125,28 @@ function gatePass(
       return some((r) => r.hasReleases || r.isContainerized || r.hasDocsSite);
     case 'S5':
       return account.hasPublishedLibrary;
-    case 'S6':
-      return (
-        account.externalMergedPRs > 0 ||
-        account.reviewsGiven > 0 ||
-        account.maxStars >= STAR_GATE
-      );
-    case 'S7':
-      return (
-        account.libraryDownloads >= DOWNLOAD_GATE ||
-        account.sustainedContribution ||
-        account.longLivedHighStar
-      );
     default:
       return false;
   }
 }
 
-export function tierRank(tier: SpineTier): number {
-  return SPINE_TIERS.indexOf(tier);
+function craftLadder(
+  repos: readonly RepoEvidence[],
+  account: AccountEvidence
+): { tier: SpineTier; cleared: SpineTier[] } {
+  const ladder: SpineTier[] = ['S1', 'S2', 'S3', 'S4', 'S5'];
+  const cleared: SpineTier[] = [];
+  let tier: SpineTier = 'S0';
+  for (const gate of ladder) {
+    if (!craftGatePass(gate, repos, account)) break;
+    cleared.push(gate);
+    tier = gate;
+  }
+  return { tier, cleared };
 }
 
 /**
- * 降格キャップ：規模あるrepoに一貫して規律が無ければ S1 に落とす。
- *
- * S2を「小さなデモrepo1個」で通過しても、本命の substantial repo が軒並み
- * スロップ的なら実態はスロップ → キャップ。これが「見せ repo」ゲーミング対策。
- *
+ * 降格キャップ：規模あるrepoに一貫して規律が無ければ craft を S1 に落とす。
  * スロップ的＝（CI0 かつ テスト0）または コミットが巨大ダンプ＋定型メッセージ（H-b）。
  */
 function demotionReason(repos: readonly RepoEvidence[]): string | null {
@@ -132,29 +154,89 @@ function demotionReason(repos: readonly RepoEvidence[]): string | null {
   if (substantial.length === 0) return null;
   const isSlopShaped = (r: RepoEvidence) =>
     (!r.hasCI && !r.nonTrivialTests) || r.commitSlop === true;
-  const allSlop = substantial.every(isSlopShaped);
-  return allSlop ? '規模あるリポジトリに一貫して規律が無い' : null;
+  return substantial.every(isSlopShaped)
+    ? '規模あるリポジトリに一貫して規律が無い'
+    : null;
 }
 
-/** 背骨ゲートを評価して階級を返す。 */
+// ── reach 軸（外部からの採用。検出器に依存しない）──────────────
+
+const STARS_TABLE = [
+  [20000, 'S7'],
+  [5000, 'S6'],
+  [1000, 'S5'],
+  [200, 'S4'],
+  [30, 'S3'],
+  [5, 'S2'],
+] as const;
+
+const FOLLOWERS_TABLE = [
+  [10000, 'S7'],
+  [2000, 'S6'],
+  [500, 'S5'],
+  [100, 'S4'],
+  [30, 'S3'],
+  [10, 'S2'],
+] as const;
+
+const FORKS_TABLE = [
+  [5000, 'S6'],
+  [1000, 'S5'],
+  [200, 'S4'],
+  [20, 'S3'],
+] as const;
+
+const DOWNLOADS_TABLE = [
+  [100000, 'S7'],
+  [10000, 'S6'],
+  [1000, 'S5'],
+] as const;
+
+function reachLadder(account: AccountEvidence): SpineTier {
+  const byContribution =
+    account.externalMergedPRs >= 20
+      ? 'S4'
+      : account.externalMergedPRs >= 1 || account.reviewsGiven >= 10
+        ? 'S3'
+        : 'S0';
+  const byLongevity = account.longLivedHighStar
+    ? 'S7'
+    : account.sustainedContribution
+      ? 'S5'
+      : 'S0';
+
+  return maxTier(
+    tierByThreshold(account.maxStars, STARS_TABLE),
+    tierByThreshold(account.followers, FOLLOWERS_TABLE),
+    tierByThreshold(account.totalForks, FORKS_TABLE),
+    tierByThreshold(account.libraryDownloads, DOWNLOADS_TABLE),
+    byContribution,
+    byLongevity
+  );
+}
+
+/** 二軸を評価して階級を返す。最終 = max(craft（降格適用後）, reach)。 */
 export function evaluateSpineTier(
   repos: readonly RepoEvidence[],
   account: AccountEvidence
 ): SpineResult {
-  const ladder: SpineTier[] = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7'];
-  const cleared: SpineTier[] = [];
-  let tier: SpineTier = 'S0';
-
-  for (const gate of ladder) {
-    if (!gatePass(gate, repos, account)) break;
-    cleared.push(gate);
-    tier = gate;
-  }
-
+  const craft = craftLadder(repos, account);
   const reason = demotionReason(repos);
-  if (reason && tierRank(tier) > tierRank('S1')) {
-    return { tier: 'S1', clearedGates: cleared, cappedBy: reason };
-  }
+  const cappedCraft =
+    reason && tierRank(craft.tier) > tierRank('S1') ? 'S1' : craft.tier;
 
-  return { tier, clearedGates: cleared };
+  const reachTier = reachLadder(account);
+  const tier = maxTier(cappedCraft, reachTier);
+
+  // 降格が最終階級を実際に下げた（reachで救われなかった）場合だけ理由を出す
+  const cappedBy =
+    reason && tierRank(tier) < tierRank(craft.tier) ? reason : undefined;
+
+  return {
+    tier,
+    clearedGates: craft.cleared,
+    craftTier: cappedCraft,
+    reachTier,
+    cappedBy,
+  };
 }

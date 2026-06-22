@@ -5,6 +5,8 @@ import { gateChecklist, nextRequirement, TIER_LABELS } from './labels';
 const spine = (over: Partial<SpineResult> = {}): SpineResult => ({
   tier: 'S2',
   clearedGates: ['S1', 'S2'],
+  craftTier: 'S2',
+  reachTier: 'S0',
   ...over,
 });
 

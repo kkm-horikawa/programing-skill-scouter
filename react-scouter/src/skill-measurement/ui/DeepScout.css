@@ -105,6 +105,25 @@
   font-size: 0.8rem;
 }
 
+.ds-axes {
+  font-size: 0.82rem;
+  color: #6fbf8c;
+  margin-top: 4px;
+}
+.ds-axes strong {
+  color: #eafff1;
+}
+
+.ds-note {
+  background: rgba(20, 60, 90, 0.4);
+  border: 1px solid #357;
+  color: #aee0ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+}
+
 .ds-cap {
   background: rgba(120, 20, 20, 0.4);
   border: 1px solid #a33;

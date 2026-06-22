@@ -125,8 +125,18 @@ function DeepScoutResult({ result }: { result: ScoutResult }) {
           階級 <strong>{TIER_LABELS[spine.tier]}</strong>
           <span className="ds-tier-code">{spine.tier}</span>
         </div>
+        <div className="ds-axes">
+          規律 craft <strong>{spine.craftTier}</strong> ／ 採用 reach{' '}
+          <strong>{spine.reachTier}</strong>（高い方を採用）
+        </div>
       </div>
 
+      {spine.reachTier > spine.craftTier && (
+        <div className="ds-note">
+          外部からの採用（star/follower/fork）が {spine.reachTier}{' '}
+          に到達。ツール痕跡が無くても世界が使う成果は実力として評価します。
+        </div>
+      )}
       {spine.cappedBy && (
         <div className="ds-cap">⚠ 降格キャップ: {spine.cappedBy}</div>
       )}

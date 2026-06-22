@@ -10,6 +10,7 @@ import {
 import {
   fetchAuthenticatedLogin,
   fetchFileText,
+  fetchFollowerCount,
   fetchOwnedRepos,
   fetchPublicRepos,
   fetchRecentCommits,
@@ -216,16 +217,16 @@ async function buildAccountEvidence(
   repoData: readonly RepoData[],
   token: string | null
 ): Promise<AccountEvidence> {
-  const profileReadme = await fetchFileText(
-    `${login}/${login}`,
-    'README.md',
-    token
-  );
+  const [profileReadme, followers, hasPublishedLibrary] = await Promise.all([
+    fetchFileText(`${login}/${login}`, 'README.md', token),
+    fetchFollowerCount(login, token),
+    detectPublishedLibrary(repoData),
+  ]);
   const maxStars = repoData.reduce(
     (max, d) => Math.max(max, d.repo.stargazers_count),
     0
   );
-  const hasPublishedLibrary = await detectPublishedLibrary(repoData);
+  const totalForks = repoData.reduce((sum, d) => sum + d.repo.forks_count, 0);
 
   return {
     hasProfileReadme: profileReadme != null,
@@ -233,6 +234,8 @@ async function buildAccountEvidence(
     externalMergedPRs: 0,
     reviewsGiven: 0,
     maxStars,
+    followers,
+    totalForks,
     libraryDownloads: 0,
     sustainedContribution: false,
     longLivedHighStar: false,

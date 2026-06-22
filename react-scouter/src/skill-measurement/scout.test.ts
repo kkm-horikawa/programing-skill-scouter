@@ -12,6 +12,8 @@ function bareAccount(over: Partial<AccountEvidence> = {}): AccountEvidence {
     externalMergedPRs: 0,
     reviewsGiven: 0,
     maxStars: 0,
+    followers: 0,
+    totalForks: 0,
     libraryDownloads: 0,
     sustainedContribution: false,
     longLivedHighStar: false,

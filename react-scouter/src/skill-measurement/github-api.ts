@@ -17,6 +17,22 @@ export function authHeaders(token: string | null): Record<string, string> {
   return { ...base, Authorization: `${scheme} ${token}` };
 }
 
+/**
+ * ユーザーのフォロワー数を取得（reach 軸の入力）。
+ * 失敗は 0 に倒す（致命的でない補助情報）。
+ */
+export async function fetchFollowerCount(
+  username: string,
+  token: string | null
+): Promise<number> {
+  const res = await fetch(`${GITHUB_API}/users/${username}`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) return 0;
+  const data = (await res.json()) as { followers?: number };
+  return data.followers ?? 0;
+}
+
 /** 認証ユーザー本人の login を取得（deep モードの対象＝本人）。 */
 export async function fetchAuthenticatedLogin(token: string): Promise<string> {
   const res = await fetch(`${GITHUB_API}/user`, {
