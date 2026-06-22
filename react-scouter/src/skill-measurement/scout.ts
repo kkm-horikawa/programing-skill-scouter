@@ -87,6 +87,13 @@ export function assembleScoutResult(
     tier: spine.tier,
     badgeFill: badges.fill,
     craftScore,
+    reach: {
+      stars: account.maxStars,
+      followers: account.followers,
+      forks: account.totalForks,
+      externalPRs: account.externalMergedPRs,
+      reviewsGiven: account.reviewsGiven,
+    },
   });
 
   return { score, spine, badges, craftScore };

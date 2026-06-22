@@ -14,7 +14,6 @@ import type {
   Organization,
 } from '../types/github';
 import { scoutPublic } from '../skill-measurement/scout';
-import { TIER_LABELS } from '../skill-measurement/ui/labels';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
@@ -42,7 +41,6 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     import('../types/github').ContributionDetails | null
   >(null);
   const [showComplete, setShowComplete] = useState(false);
-  const [rankLabel, setRankLabel] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const animationRef = useRef<number | undefined>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -237,9 +235,6 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
           combinedActivityData
         ),
       };
-      setRankLabel(
-        `${TIER_LABELS[scoutResult.spine.tier]} (${scoutResult.spine.tier})`
-      );
       setProgress(100);
       setLoadingMessage('分析完了！');
 
@@ -610,16 +605,17 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
     animate();
   };
 
+  // 新スケール: craft の土台は最大20万(S5)。reach(star等)が青天井で上積みする。
   const determineRank = (powerLevel: number): string => {
-    if (powerLevel >= 5000000) return 'GOD TIER DEVELOPER';
-    if (powerLevel >= 2000000) return 'LEGENDARY DEVELOPER';
+    if (powerLevel >= 10000000) return 'GOD TIER DEVELOPER';
+    if (powerLevel >= 3000000) return 'LEGENDARY DEVELOPER';
     if (powerLevel >= 1000000) return 'MYTHICAL DEVELOPER';
     if (powerLevel >= 500000) return 'SUPER ELITE';
     if (powerLevel >= 250000) return 'ELITE DEVELOPER';
-    if (powerLevel >= 100000) return 'EXPERT DEVELOPER';
-    if (powerLevel >= 50000) return 'SENIOR DEVELOPER';
-    if (powerLevel >= 25000) return 'MID-LEVEL DEVELOPER';
-    if (powerLevel >= 10000) return 'JUNIOR DEVELOPER';
+    if (powerLevel >= 150000) return 'EXPERT DEVELOPER';
+    if (powerLevel >= 80000) return 'SENIOR DEVELOPER';
+    if (powerLevel >= 40000) return 'MID-LEVEL DEVELOPER';
+    if (powerLevel >= 15000) return 'JUNIOR DEVELOPER';
     if (powerLevel >= 5000) return 'APPRENTICE DEVELOPER';
     if (powerLevel >= 1000) return 'NOVICE DEVELOPER';
     return 'BEGINNER';
@@ -927,7 +923,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
         {displayStats && (
           <>
             <text x="5%" y="52%" className="rank scouter-text">
-              RANK: {rankLabel ?? determineRank(displayStats.power)}
+              RANK: {determineRank(displayStats.power)}
             </text>
 
             <g className="stats-group">

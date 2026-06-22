@@ -93,50 +93,38 @@ describe('craft 軸（規律の連続ラダー）', () => {
   });
 });
 
-describe('reach 軸（外部からの採用。検出器に依存しない）', () => {
-  it('規律ツールが一切無くても、star が桁外れなら S7（torvalds 問題）', () => {
-    // CI も Linter も検出できない（Cカーネル等）が star 18万
+describe('reach は階級に影響しない（人気は技術力ではない）', () => {
+  it('star が桁外れでも、craft が低ければ階級は低いまま', () => {
+    // torvalds 問題: star 18万でも階級は craft 由来（戦闘力は score 側で青天井加算）
     const r = evaluateSpineTier(
       [bareRepo()],
       bareAccount({ maxStars: 180000 })
     );
+    expect(r.tier).toBe('S1');
     expect(r.craftTier).toBe('S1');
-    expect(r.reachTier).toBe('S7');
-    expect(r.tier).toBe('S7');
   });
 
-  it('フォロワーが多ければ reach で上がる', () => {
+  it('フォロワーが多くても階級は上がらない', () => {
     const r = evaluateSpineTier(
       [bareRepo()],
       bareAccount({ followers: 12000 })
     );
-    expect(r.tier).toBe('S7');
+    expect(r.tier).toBe('S1');
   });
 
-  it('craft と reach の高い方を採る', () => {
+  it('埋もれた実力者: star が無くても craft で正当に評価される', () => {
     const repo = bareRepo({
       hasCI: true,
       nonTrivialTests: true,
       hasLinter: true,
     });
-    const r = evaluateSpineTier([repo], bareAccount({ maxStars: 1200 }));
-    // craft S2 vs reach S5(stars>=1000) → S5
-    expect(r.craftTier).toBe('S2');
-    expect(r.reachTier).toBe('S5');
-    expect(r.tier).toBe('S5');
-  });
-
-  it('star も follower も乏しいバイブコーダーは両軸とも低い', () => {
-    const r = evaluateSpineTier(
-      [bareRepo({ hasRealCode: true })],
-      bareAccount({ maxStars: 2, followers: 3 })
-    );
-    expect(r.tier).toBe('S1');
+    const r = evaluateSpineTier([repo], bareAccount({ maxStars: 0 }));
+    expect(r.tier).toBe('S2');
   });
 });
 
 describe('降格キャップ', () => {
-  it('見せrepoでS2通過しても、本命の規模repoがスロップで reach も無ければ S1', () => {
+  it('見せrepoでS2通過しても、本命の規模repoがスロップなら S1', () => {
     const showcase = bareRepo({
       hasCI: true,
       nonTrivialTests: true,
@@ -153,14 +141,13 @@ describe('降格キャップ', () => {
     expect(r.cappedBy).toMatch(/規律/);
   });
 
-  it('降格対象でも reach が高ければ救われる（cappedBy は出ない）', () => {
+  it('star が多くても階級の降格は救われない（reach は階級に効かない）', () => {
     const slop = bareRepo({
       isSubstantial: true,
       hasCI: false,
       nonTrivialTests: false,
     });
     const r = evaluateSpineTier([slop], bareAccount({ maxStars: 50000 }));
-    expect(r.tier).toBe('S7');
-    expect(r.cappedBy).toBeUndefined();
+    expect(r.tier).toBe('S1');
   });
 });

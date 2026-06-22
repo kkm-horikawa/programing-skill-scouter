@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { composeScore, TIER_BANDS } from './score';
+import { composeScore, reachBonus, TIER_BANDS } from './score';
 
 describe('composeScore', () => {
   it('S0 は power 0', () => {
@@ -37,5 +37,60 @@ describe('composeScore', () => {
   it('範囲外の入力は 0..1 にクランプする', () => {
     const s = composeScore({ tier: 'S2', badgeFill: 5, craftScore: -3 });
     expect(s.fill).toBe(0.5);
+  });
+});
+
+describe('reachBonus / reach の青天井加算', () => {
+  it('star が無ければボーナス0', () => {
+    expect(
+      reachBonus({
+        stars: 0,
+        followers: 0,
+        forks: 0,
+        externalPRs: 0,
+        reviewsGiven: 0,
+      })
+    ).toBe(0);
+  });
+
+  it('star は際限なく線形に積み増す', () => {
+    const a = reachBonus({
+      stars: 1000,
+      followers: 0,
+      forks: 0,
+      externalPRs: 0,
+      reviewsGiven: 0,
+    });
+    const b = reachBonus({
+      stars: 2000,
+      followers: 0,
+      forks: 0,
+      externalPRs: 0,
+      reviewsGiven: 0,
+    });
+    expect(b).toBe(a * 2);
+  });
+
+  it('reach は帯の上限を超えて戦闘力を押し上げる（青天井）', () => {
+    const famous = composeScore({
+      tier: 'S2',
+      badgeFill: 1,
+      craftScore: 1,
+      reach: {
+        stars: 180000,
+        followers: 50000,
+        forks: 80000,
+        externalPRs: 0,
+        reviewsGiven: 0,
+      },
+    });
+    expect(famous.power).toBeGreaterThan(TIER_BANDS.S7[1]);
+    expect(famous.tier).toBe('S2'); // 階級は craft のまま、人気で変わらない
+  });
+
+  it('reach が無い実力者は craft 帯どおり（人気ゼロでも沈まない）', () => {
+    const unknown = composeScore({ tier: 'S5', badgeFill: 1, craftScore: 1 });
+    expect(unknown.power).toBe(TIER_BANDS.S5[1]);
+    expect(unknown.reachBonus).toBe(0);
   });
 });

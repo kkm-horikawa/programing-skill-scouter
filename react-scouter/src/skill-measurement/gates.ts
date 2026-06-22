@@ -72,31 +72,14 @@ export interface SpineResult {
   tier: SpineTier;
   /** craft 軸で通過した段 */
   clearedGates: SpineTier[];
-  /** craft 軸の到達段 */
+  /** craft 軸の到達段（= tier。reach＝人気は階級に影響しない） */
   craftTier: SpineTier;
-  /** reach 軸の到達段 */
-  reachTier: SpineTier;
-  /** 降格キャップが効いた理由（craftを下げ、かつreachで救われなかった場合のみ） */
+  /** 降格キャップが効いた理由 */
   cappedBy?: string;
 }
 
 export function tierRank(tier: SpineTier): number {
   return SPINE_TIERS.indexOf(tier);
-}
-
-function maxTier(...tiers: SpineTier[]): SpineTier {
-  return tiers.reduce((a, b) => (tierRank(b) > tierRank(a) ? b : a), 'S0');
-}
-
-/** 閾値表から、value が満たす最上位の段を引く。降順 [閾値, 段]。 */
-function tierByThreshold(
-  value: number,
-  table: ReadonlyArray<readonly [number, SpineTier]>
-): SpineTier {
-  for (const [min, tier] of table) {
-    if (value >= min) return tier;
-  }
-  return 'S0';
 }
 
 // ── craft 軸（規律の連続ラダー S1-S5）─────────────────────────
@@ -159,84 +142,24 @@ function demotionReason(repos: readonly RepoEvidence[]): string | null {
     : null;
 }
 
-// ── reach 軸（外部からの採用。検出器に依存しない）──────────────
-
-const STARS_TABLE = [
-  [20000, 'S7'],
-  [5000, 'S6'],
-  [1000, 'S5'],
-  [200, 'S4'],
-  [30, 'S3'],
-  [5, 'S2'],
-] as const;
-
-const FOLLOWERS_TABLE = [
-  [10000, 'S7'],
-  [2000, 'S6'],
-  [500, 'S5'],
-  [100, 'S4'],
-  [30, 'S3'],
-  [10, 'S2'],
-] as const;
-
-const FORKS_TABLE = [
-  [5000, 'S6'],
-  [1000, 'S5'],
-  [200, 'S4'],
-  [20, 'S3'],
-] as const;
-
-const DOWNLOADS_TABLE = [
-  [100000, 'S7'],
-  [10000, 'S6'],
-  [1000, 'S5'],
-] as const;
-
-function reachLadder(account: AccountEvidence): SpineTier {
-  const byContribution =
-    account.externalMergedPRs >= 20
-      ? 'S4'
-      : account.externalMergedPRs >= 1 || account.reviewsGiven >= 10
-        ? 'S3'
-        : 'S0';
-  const byLongevity = account.longLivedHighStar
-    ? 'S7'
-    : account.sustainedContribution
-      ? 'S5'
-      : 'S0';
-
-  return maxTier(
-    tierByThreshold(account.maxStars, STARS_TABLE),
-    tierByThreshold(account.followers, FOLLOWERS_TABLE),
-    tierByThreshold(account.totalForks, FORKS_TABLE),
-    tierByThreshold(account.libraryDownloads, DOWNLOADS_TABLE),
-    byContribution,
-    byLongevity
-  );
-}
-
-/** 二軸を評価して階級を返す。最終 = max(craft（降格適用後）, reach)。 */
+/**
+ * 階級を評価して返す。階級は craft（規律）だけで決まる。
+ * reach（star/follower/fork）は技術力の指標ではない（埋もれた実力者が大量にいる）ので
+ * 階級には一切影響させず、戦闘力の青天井ボーナス（score.ts）としてのみ反映する。
+ */
 export function evaluateSpineTier(
   repos: readonly RepoEvidence[],
   account: AccountEvidence
 ): SpineResult {
   const craft = craftLadder(repos, account);
   const reason = demotionReason(repos);
-  const cappedCraft =
+  const capped =
     reason && tierRank(craft.tier) > tierRank('S1') ? 'S1' : craft.tier;
 
-  const reachTier = reachLadder(account);
-  const tier = maxTier(cappedCraft, reachTier);
-
-  // 降格が最終階級を実際に下げた（reachで救われなかった）場合だけ理由を出す
-  const cappedBy =
-    reason && tierRank(tier) < tierRank(craft.tier) ? reason : undefined;
-
   return {
-    tier,
+    tier: capped,
     clearedGates: craft.cleared,
-    craftTier: cappedCraft,
-    reachTier,
-    cappedBy,
+    craftTier: capped,
+    cappedBy: reason && capped !== craft.tier ? reason : undefined,
   };
 }
