@@ -16,6 +16,7 @@ import type {
 import { scoutPublic } from '../skill-measurement/scout';
 import { earnedBadgeLabels } from '../skill-measurement/badges';
 import { TIER_LABELS } from '../skill-measurement/ui/labels';
+import { detectTool } from '../skill-measurement/tooling-detect';
 
 interface ScouterDisplayProps {
   isScanning: boolean;
@@ -454,7 +455,7 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
       infrastructure: new Set(),
     };
 
-    const topRepos = repos.slice(0, 20);
+    const topRepos = repos.slice(0, 50);
 
     for (const repo of topRepos) {
       try {
@@ -507,6 +508,12 @@ const ScouterDisplay: React.FC<ScouterDisplayProps> = ({
               } else if (fileName.includes('circle')) {
                 techStack.devops.add('CircleCI');
               }
+            }
+
+            // 多エコシステム横断でインフラ/ビルド/開発ツールを検出（依存に出ない分）
+            const tool = detectTool(item.name, item.type);
+            if (tool) {
+              techStack.infrastructure.add(tool);
             }
           }
         }
