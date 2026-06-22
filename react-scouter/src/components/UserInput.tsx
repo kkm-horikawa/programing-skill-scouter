@@ -124,8 +124,6 @@ const UserInput: React.FC<UserInputProps> = ({
 
   return (
     <div className="input-container">
-      <h2 className="title">GitHub Power Scouter</h2>
-
       <div className="scan-section">
         <input
           type="text"
