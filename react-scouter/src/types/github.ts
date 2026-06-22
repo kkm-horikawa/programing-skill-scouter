@@ -42,6 +42,7 @@ export interface GitHubRepo {
   pushed_at: string;
   language: string | null;
   size: number;
+  default_branch: string;
 }
 
 export interface GitHubEvent {

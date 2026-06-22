@@ -17,6 +17,21 @@ export function authHeaders(token: string | null): Record<string, string> {
   return { ...base, Authorization: `${scheme} ${token}` };
 }
 
+/** 認証ユーザー本人の login を取得（deep モードの対象＝本人）。 */
+export async function fetchAuthenticatedLogin(token: string): Promise<string> {
+  const res = await fetch(`${GITHUB_API}/user`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch authenticated user: ${res.status} ${res.statusText}`
+    );
+  }
+  const data = (await res.json()) as { login?: string };
+  if (!data.login) throw new Error('Authenticated user has no login');
+  return data.login;
+}
+
 /**
  * 認証ユーザー本人が所有する repo を全取得（private 含む）。
  * deep 自己診断モード用。`repo` スコープのトークンが必要。
@@ -106,6 +121,51 @@ export async function fetchRecentCommits(
     commit?: { message?: string };
   }>;
   return data.map((c) => ({ message: c.commit?.message ?? '' }));
+}
+
+/**
+ * ツリーから取れない repo メタデータをまとめて取得（背骨ゲート S3/S4 用）。
+ * ブランチ保護・PR利用・リリースの有無。どれか1つ落ちても全体は壊さない。
+ */
+export async function fetchRepoMeta(
+  fullName: string,
+  defaultBranch: string,
+  token: string | null
+): Promise<{
+  hasBranchProtection: boolean;
+  usesPullRequests: boolean;
+  hasReleases: boolean;
+}> {
+  const headers = authHeaders(token);
+  const get = async (path: string) => {
+    try {
+      return await fetch(`${GITHUB_API}/repos/${fullName}/${path}`, {
+        headers,
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const [branch, pulls, releases] = await Promise.all([
+    get(`branches/${defaultBranch}`),
+    get('pulls?state=all&per_page=1'),
+    get('releases?per_page=1'),
+  ]);
+
+  const branchData = branch?.ok
+    ? ((await branch.json()) as { protected?: boolean })
+    : null;
+  const pullsData = pulls?.ok ? ((await pulls.json()) as unknown[]) : [];
+  const releasesData = releases?.ok
+    ? ((await releases.json()) as unknown[])
+    : [];
+
+  return {
+    hasBranchProtection: Boolean(branchData?.protected),
+    usesPullRequests: Array.isArray(pullsData) && pullsData.length > 0,
+    hasReleases: Array.isArray(releasesData) && releasesData.length > 0,
+  };
 }
 
 /**
