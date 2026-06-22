@@ -16,6 +16,7 @@ import {
   fetchRepoTree,
 } from './github-api';
 import { craftMetrics, isCommitSlop, type CommitSummary } from './heuristics';
+import { checkRegistry, parsePackageNames } from './published-library';
 import { selectRepresentativeRepos } from './sampling';
 import { composeScore, type SkillScore } from './score';
 import { DEFAULT_SAMPLING_POLICY, type RepoTree } from './types';
@@ -89,8 +90,18 @@ export function assembleScoutResult(
   return { score, spine, badges, craftScore };
 }
 
-/** H-c で読む key config（存在するものだけ使う） */
-const CONFIG_PATHS = ['tsconfig.json', 'mypy.ini', 'pyproject.toml'];
+/**
+ * 取得する key file（存在するものだけ使う）。
+ * H-c 設定厳密さ（tsconfig/mypy/pyproject）と、公開ライブラリ判定の manifest を兼ねる。
+ */
+const KEY_FILES = [
+  'tsconfig.json',
+  'mypy.ini',
+  'pyproject.toml',
+  'setup.cfg',
+  'package.json',
+  'Cargo.toml',
+];
 
 export interface DeepScoutOptions {
   /** ユーザーがピン留めした代表 repo の full_name */
@@ -121,7 +132,7 @@ export async function scoutDeep(
         fetchRepoMeta(repo.full_name, repo.default_branch, token),
       ]);
       const configEntries = await Promise.all(
-        CONFIG_PATHS.map(
+        KEY_FILES.map(
           async (path) =>
             [path, await fetchFileText(repo.full_name, path, token)] as const
         )
@@ -134,17 +145,41 @@ export async function scoutDeep(
     })
   );
 
-  const account = await buildAccountEvidence(
-    token,
-    sample.map((s) => s.repo)
-  );
+  const account = await buildAccountEvidence(token, repoData);
   return assembleScoutResult(repoData, account);
 }
 
-/** 🟢で取れるアカウント証拠。🔵分は0/falseでスタブし、後追いで解禁する。 */
+/**
+ * 公開ライブラリがあるか判定。
+ * manifest からパッケージ名を抽出し、レジストリで公開を確認（確実）。
+ * リリースを切っている repo は manifest があれば公開済みとみなす（CORS拒否時のフォールバック）。
+ */
+async function detectPublishedLibrary(
+  repoData: readonly RepoData[]
+): Promise<boolean> {
+  const refs = repoData.flatMap((d) =>
+    parsePackageNames(d.configFiles).map((ref) => ({
+      ref,
+      hasReleases: d.meta.hasReleases,
+    }))
+  );
+  if (refs.length === 0) return false;
+  const results = await Promise.all(
+    refs.map(async (r) => ({
+      status: await checkRegistry(r.ref),
+      hasReleases: r.hasReleases,
+    }))
+  );
+  // レジストリが公開を確認できれば成立（確実）
+  if (results.some((r) => r.status === 'published')) return true;
+  // 確認できなかった（CORS/ネットワーク）時だけ、manifest＋リリースで代替
+  return results.some((r) => r.status === 'unknown' && r.hasReleases);
+}
+
+/** 🟢で取れるアカウント証拠。🔵分（レビュー/外部PR/DL数）は後追いで解禁する。 */
 async function buildAccountEvidence(
   token: string,
-  sampleRepos: readonly GitHubRepo[]
+  repoData: readonly RepoData[]
 ): Promise<AccountEvidence> {
   const login = await fetchAuthenticatedLogin(token);
   const profileReadme = await fetchFileText(
@@ -152,13 +187,15 @@ async function buildAccountEvidence(
     'README.md',
     token
   );
-  const maxStars = sampleRepos.reduce(
-    (max, r) => Math.max(max, r.stargazers_count),
+  const maxStars = repoData.reduce(
+    (max, d) => Math.max(max, d.repo.stargazers_count),
     0
   );
+  const hasPublishedLibrary = await detectPublishedLibrary(repoData);
+
   return {
     hasProfileReadme: profileReadme != null,
-    hasPublishedLibrary: false,
+    hasPublishedLibrary,
     externalMergedPRs: 0,
     reviewsGiven: 0,
     maxStars,
