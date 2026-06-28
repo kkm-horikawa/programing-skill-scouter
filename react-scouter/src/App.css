@@ -451,6 +451,288 @@ body {
   }
 }
 
+/* ── どうやって測っているか（説明セクション）───────────────── */
+.measure-explainer {
+  width: 100vw;
+  padding: 6rem 0 7rem;
+  background: linear-gradient(135deg, #0d0d12 0%, #14142a 50%, #0d0d12 100%);
+  border-top: 1px solid rgba(0, 255, 0, 0.12);
+}
+
+.measure-explainer-inner {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  box-sizing: border-box;
+}
+
+.measure-lead {
+  max-width: 760px;
+  margin: -1.5rem auto 3.5rem;
+  text-align: center;
+  font-size: 1.1rem;
+  line-height: 2;
+  color: #cfcfd6;
+}
+
+.measure-lead strong {
+  color: #00ff88;
+  font-weight: 700;
+}
+
+/* 二軸カード */
+.axis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.axis-card {
+  position: relative;
+  padding: 2rem 1.9rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.axis-craft {
+  border-top: 3px solid #00ff88;
+}
+
+.axis-reach {
+  border-top: 3px solid #ffc93c;
+}
+
+.axis-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin-bottom: 0.6rem;
+}
+
+.axis-card h3 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin: 0 0 1rem;
+}
+
+.axis-craft h3 {
+  color: #5effa8;
+}
+
+.axis-reach h3 {
+  color: #ffd66b;
+}
+
+.axis-card p {
+  font-size: 0.97rem;
+  line-height: 1.85;
+  color: #c4c4cc;
+  margin: 0 0 0.9rem;
+}
+
+.axis-card p:last-child {
+  margin-bottom: 0;
+}
+
+.axis-card strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.axis-note {
+  padding-left: 0.9rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.9rem !important;
+  color: #9a9aa3 !important;
+}
+
+/* 合成の式 */
+.measure-formula {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0 0 4.5rem;
+  font-size: 1.05rem;
+  color: #cfcfd6;
+}
+
+.measure-formula > span {
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.measure-formula .formula-op {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #777;
+  font-size: 1.3rem;
+}
+
+.measure-formula .formula-result {
+  background: linear-gradient(45deg, #00ff88, #00ffd0);
+  color: #06160f;
+  font-weight: 800;
+  border: none;
+}
+
+.block-title {
+  font-size: 1.45rem;
+  color: #fff;
+  text-align: center;
+  margin: 0 0 1.6rem;
+}
+
+/* 規律6観点 */
+.craft-detail {
+  margin-bottom: 4.5rem;
+}
+
+.craft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.craft-item {
+  padding: 1.3rem 1.4rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.25s ease;
+}
+
+.craft-item:hover {
+  border-color: rgba(0, 255, 136, 0.35);
+}
+
+.craft-item h4 {
+  font-size: 1.05rem;
+  color: #5effa8;
+  margin: 0 0 0.5rem;
+}
+
+.craft-item p {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #b6b6bd;
+  margin: 0;
+}
+
+/* 技術階級ラダー */
+.tier-lead {
+  text-align: center;
+  color: #b6b6bd;
+  font-size: 0.97rem;
+  line-height: 1.8;
+  margin: -0.8rem 0 1.8rem;
+}
+
+.tier-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tier-row {
+  display: grid;
+  grid-template-columns: 2.2rem 7rem 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.tier-row:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.tier-row:first-child {
+  background: rgba(0, 255, 136, 0.07);
+  border-color: rgba(0, 255, 136, 0.28);
+}
+
+.tier-step {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.tier-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #eaeaf0;
+}
+
+.tier-row:first-child .tier-name {
+  color: #5effa8;
+}
+
+.tier-desc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #a8a8b0;
+}
+
+.measure-footnote {
+  margin-top: 3.5rem;
+  text-align: center;
+  font-size: 0.88rem;
+  line-height: 1.9;
+  color: #84848c;
+}
+
+@media (max-width: 768px) {
+  .measure-explainer {
+    width: 100%;
+    padding: 4rem 0 4.5rem;
+    overflow: hidden;
+  }
+
+  .measure-lead {
+    font-size: 1rem;
+    line-height: 1.9;
+  }
+
+  .axis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .measure-formula {
+    font-size: 0.95rem;
+    gap: 0.6rem;
+  }
+
+  .tier-row {
+    grid-template-columns: 1.8rem 5.5rem 1fr;
+    gap: 0.7rem;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .tier-name {
+    font-size: 0.9rem;
+  }
+
+  .tier-desc {
+    font-size: 0.82rem;
+  }
+}
+
 @media (max-width: 768px) {
   @keyframes scanLine {
     0% {
